@@ -21,8 +21,9 @@ export class Routes {
         app.route('/login')
             .post(this.authController.login)
 
-        //app.route('/user')
-           // .get(verifyToken, this.authController.user)
+        app.route('/some-resource')
+            //grant user access if authenticated 
+            .get(verifyToken, this.authController.someResource)
 
 
 
