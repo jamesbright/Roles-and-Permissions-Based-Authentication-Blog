@@ -1,3 +1,4 @@
+import * as express from "express";
 import { Request, Response } from "express";
 import { AuthController } from "../controllers/AuthController";
 import verifyToken from '../middlewares/verify'
@@ -5,7 +6,7 @@ import verifyToken from '../middlewares/verify'
 export class Routes {
     public authController: AuthController = new AuthController();
 
-    public routes(app): void {
+    public routes(app:express.Application): void {
        
         app.route('/')
             .get((req: Request, res: Response) => {

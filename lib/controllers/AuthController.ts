@@ -11,7 +11,7 @@ dotenv.config({ path: __dirname + '/.env' })
 const User = mongoose.model('User', UserSchema);
 export class AuthController {
 
-    public register(req: Request, res: Response) {
+    public register(req: Request, res: Response):void {
         //check if already registered
         User.findOne({ email: req.body.email }, function (err, user) {
             if (err) return res.status(500).send({ 'error': 'Server error' });
@@ -35,9 +35,9 @@ export class AuthController {
                 });
                 res.status(200).send({ auth: true, token: token, message: 'Successfull' });
             });
-    };
+    }
 
-    public login(req: Request, res: Response) {
+    public login(req: Request, res: Response):void {
         User.findOne({ email: req.body.email }, function (err, user) {
             if (err) return res.status(500).send({ 'error': 'Server error' });
             if (!user) return res.status(404).send({ 'error': 'User does not exist.' });
@@ -52,10 +52,10 @@ export class AuthController {
 
             res.status(200).send({ auth: true, token: token,user_id:user._id, message: 'Successfull' });
         });
-    };
+    }
 
 
-    public someResource(req: any, res: Response) {
+    public someResource(req: Request, res: Response):void {
         User.findById(req.body.id, function (err, user) {
             if (err) return res.status(500).send("There was a problem finding the user.");
             if (!user) return res.status(404).send("No user found.");
@@ -63,7 +63,7 @@ export class AuthController {
             res.status(200).send({name:user.name, email: user.email, auth:true, message:'Acces granted' });
         });
 
-    };
+    }
 
 
 }
