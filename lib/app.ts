@@ -16,19 +16,18 @@ class App {
         this.config();
         this.route.routes(this.app);
         this.mongoSetup();
-        
+
     }
     private config(): void {
         // support application/json type post data
         this.app.use(bodyParser.json());
         //support application/x-www-form-urlencoded post data
         this.app.use(bodyParser.urlencoded({ extended: false }));
-   
+
     }
 
-private mongoSetup(): void{
-//mongoose.Promise = global.Promise;
-mongoose.connect(this.mongoUrl);
-}
+    private mongoSetup(): void {
+        mongoose.connect(this.mongoUrl);
+    }
 }
 export default new App().app;

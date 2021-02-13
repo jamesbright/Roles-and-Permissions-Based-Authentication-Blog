@@ -50,13 +50,13 @@ export class AuthController {
                 expiresIn: 86400 // expires in 24 hours
             });
 
-            res.status(200).send({ auth: true, token: token,user_id:user._id, message: 'Successfull' });
+            res.status(200).send({ auth: true, token: token,_id:user._id, message: 'Successfull' });
         });
     }
 
 
     public someResource(req: Request, res: Response):void {
-        User.findById(req.body.id, function (err, user) {
+        User.findById(req.body._id, function (err, user) {
             if (err) return res.status(500).send("There was a problem finding the user.");
             if (!user) return res.status(404).send("No user found.");
 

@@ -8,7 +8,7 @@
     "lint": "eslint . --ext .ts",
     "tsc": "tsc",
     "build": "npm-run-all clean lint tsc",
-    "dev": "nodemon --watch lib/**/*.ts  --exec ts-node lib/server.ts",
+    "dev": "nodemon --watch lib/**/*.ts  --exec ts-node lib/index.ts",
     "start": "nodemon ./dist/index.js",
     "prod": "npm run build && npm run start"
   },
