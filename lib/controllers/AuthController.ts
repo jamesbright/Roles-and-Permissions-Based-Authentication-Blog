@@ -6,7 +6,7 @@ import * as bcrypt from 'bcryptjs';
 import * as dotenv from 'dotenv';
 
 // initialize configuration
-dotenv.config({ path: __dirname + '/.env' })
+dotenv.config({ path: __dirname + '../.env' })
 
 const User = mongoose.model('User', UserSchema);
 export class AuthController {

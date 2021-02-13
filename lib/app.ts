@@ -5,6 +5,7 @@ import * as mongoose from "mongoose";
 import * as dotenv from 'dotenv';
 
 // initialize configuration
+console.log(__dirname)
 dotenv.config({ path: __dirname + '/.env' })
 class App {
     public app: express.Application;
