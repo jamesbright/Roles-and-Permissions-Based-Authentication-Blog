@@ -30,7 +30,7 @@ password
 returns: {
 auth,
 token,
-user_id,
+_id,
 message
 }
 ```
