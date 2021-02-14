@@ -3,9 +3,9 @@ import { Request, Response } from 'express';
 import * as dotenv from 'dotenv';
 
 // initialize configuration
-dotenv.config({ path: __dirname + '/.env' })
+dotenv.config()
 
-export default function verifyToken(req: Request, res: Response, next): any {
+export default function verifyToken(req: Request, res: Response, next:any): any {
     const token: any = req.headers['x-access-token'];
     if (!token) return res.status(403).send({ auth: false, message: 'No token provided.' });
 
