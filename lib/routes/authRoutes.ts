@@ -1,30 +1,40 @@
 import * as express from "express";
 import { Request, Response } from "express";
 import { AuthController } from "../controllers/AuthController";
-import verifyToken from '../middlewares/verify'
+import   { verifyToken,isAdmin,isModerator } from '../middlewares/verifyAccess'
 
 export class Routes {
     public authController: AuthController = new AuthController();
 
-    public routes(app:express.Application): void {
-       
+    public routes(app: express.Application): void {
+
         app.route('/')
             .get((req: Request, res: Response) => {
                 res.status(200).send({
                     message: 'Hello,wellcome'
                 })
             });
-        // User register
+        // User register route
         app.route('/register')
             .post(this.authController.register)
 
-        // User login
+        // User login route
         app.route('/login')
             .post(this.authController.login)
 
+        // get all users route
+        app.route('/users')
+            .get(this.authController.getAllUsers)
+        
+            // get a user route
+        app.route('/user/:id')
+            .get(this.authController.getUserWithID)
+            .put(this.authController.updateUser)
+
+        
         app.route('/some-resource')
             //grant user access if authenticated 
-            .get(verifyToken, this.authController.someResource)
+            .get([ verifyToken,isAdmin,isModerator], this.authController.someResource)
 
 
 

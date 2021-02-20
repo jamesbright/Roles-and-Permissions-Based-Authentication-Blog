@@ -1,9 +1,5 @@
 import * as mongoose from 'mongoose';
-import * as mongoose_fuzzy_searching from 'mongoose-fuzzy-searching';
-//import mongoose_fuzzy_searching = require('mongoose-fuzzy-searching');
-
-const Schema = mongoose.Schema;
-export const UserSchema = new Schema({
+ interface UserI extends mongoose.Document {
     firstName: {
         type: String
     },
@@ -34,13 +30,7 @@ export const UserSchema = new Schema({
     ],
 
     created_at: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
+        type: Date
     }
-});
-
-UserSchema.plugin(mongoose_fuzzy_searching, { fields: ['firstName', 'lastName'] })
+}
+export { UserI }
