@@ -1,8 +1,9 @@
 
 
 interface Status{
-    readonly status: number,
-    readonly message:string
+    status: string;
+    message: string;
+    code: number;
 }
 
 export { Status }

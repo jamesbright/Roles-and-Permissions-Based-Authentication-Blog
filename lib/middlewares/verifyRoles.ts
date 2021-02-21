@@ -15,7 +15,6 @@ export default function checkRolesExisted (req:Request, res:Response, next:Reque
         });
 
           next;
-       // return;
       }
     }
   }

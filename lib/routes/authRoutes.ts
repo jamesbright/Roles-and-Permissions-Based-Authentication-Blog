@@ -1,7 +1,7 @@
 import * as express from "express";
 import { Request, Response } from "express";
 import { AuthController } from "../controllers/AuthController";
-import   { verifyToken,isAdmin,isModerator } from '../middlewares/verifyAccess'
+import   { verifyToken,isAdmin,isSuperAdmin } from '../middlewares/verifyAccess'
 
 export class Routes {
     public authController: AuthController = new AuthController();
@@ -27,14 +27,14 @@ export class Routes {
             .get(this.authController.getAllUsers)
         
             // get a user route
-        app.route('/user/:id')
+        app.route('/user/:userId')
             .get(this.authController.getUserWithID)
-            .put(this.authController.updateUser)
+            .put(isSuperAdmin,this.authController.updateUser)
 
         
         app.route('/some-resource')
-            //grant user access if authenticated 
-            .get([ verifyToken,isAdmin,isModerator], this.authController.someResource)
+            //grant user access if fully authenticated 
+            .get([ verifyToken,isAdmin,isSuperAdmin], this.authController.someResource)
 
 
 
