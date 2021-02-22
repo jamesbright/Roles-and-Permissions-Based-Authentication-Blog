@@ -1,10 +1,14 @@
-import * as express from "express";
-import { Request, Response } from "express";
-import { AuthController } from "../controllers/AuthController";
-import   { verifyToken,isAdmin,isSuperAdmin } from '../middlewares/verifyAccess'
+import * as express from 'express';
+import { Request, Response } from 'express';
+import { AuthController } from '../controllers/AuthController';
+import { UserController } from '../controllers/UserController';
+import { verifyToken, isAdmin, isSuperAdmin } from '../middlewares/verifyAccess'
+import validateSignup from '../middlewares/validateSignup'
+
 
 export class Routes {
     public authController: AuthController = new AuthController();
+    public userController: UserController = new UserController();
 
     public routes(app: express.Application): void {
 
@@ -14,28 +18,31 @@ export class Routes {
                     message: 'Hello,wellcome'
                 })
             });
-        // User register route
-        app.route('/register')
-            .post(this.authController.register)
+        // user registration route
+        app.route('/api/register')
+            .post(validateSignup, this.authController.register)
 
-        // User login route
-        app.route('/login')
+        // user login route
+        app.route('/api/login')
             .post(this.authController.login)
 
-        // get all users route
-        app.route('/users')
-            .get(this.authController.getAllUsers)
-        
-            // get a user route
-        app.route('/user/:userId')
-            .get(this.authController.getUserWithID)
-            .put(isSuperAdmin,this.authController.updateUser)
+        // get all users 
+        app.route('/api/users')
+            .get(this.userController.getAllUsers)
 
-        
-        app.route('/some-resource')
-            //grant user access if fully authenticated 
-            .get([ verifyToken,isAdmin,isSuperAdmin], this.authController.someResource)
+        // search for users 
+        app.route('/api/users/search/:searchTerm')
+            .get(this.userController.search)
 
+
+        // get a user with the user's id
+        app.route('/api/user/:userId')
+            .get(this.userController.getUserWithID)
+            //only superAdmin is allowed to update user
+            .put([verifyToken, isSuperAdmin], this.userController.updateUser)
+
+
+      
 
 
     }

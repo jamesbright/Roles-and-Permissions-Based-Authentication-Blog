@@ -53,7 +53,7 @@ function isAdmin(req: Request, res: Response, next): any {
                     }
                 }
 
-               return res.status(403).send({  status:"Forbidden", code:403, message: "Require Admin Role!" });
+               return res.status(403).send({  status:"Forbidden", code:403, message: "Requires Admin Role!" });
                
             }
         );
@@ -85,7 +85,7 @@ function isSuperAdmin(req: Request, res: Response, next: any): any {
                     }
                 }
 
-                return res.status(403).send({ status:"Forbidden", code:403, message: "Require SuperAdmin Role!" });
+                return res.status(403).send({ status:"Forbidden", code:403, message: "Requires SuperAdmin Role!" });
                
             }
         );

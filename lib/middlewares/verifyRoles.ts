@@ -1,10 +1,10 @@
 import * as mongoose from 'mongoose';
 import { RoleSchema } from '../models/roleModel';
 import { Request, Response } from 'express';
-
+import { RoleI } from '../interfaces/role'
 
 //Create an instance of the role model
-const Roles = mongoose.model('Role', RoleSchema);
+const Roles = mongoose.model<RoleI>('Role', RoleSchema);
 
 export default function checkRolesExisted (req:Request, res:Response, next:Request) : any{
   if (req.body.roles) {

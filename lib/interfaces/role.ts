@@ -6,6 +6,12 @@ interface RoleI extends mongoose.Document {
         type: Date
         
     },
+       permissions: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Permission"
+        }
+    ],
     updatedAt: {
         type: Date
        

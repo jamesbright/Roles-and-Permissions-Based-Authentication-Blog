@@ -1,24 +1,32 @@
 import * as mongoose from 'mongoose';
 import * as mongoose_fuzzy_searching from 'mongoose-fuzzy-searching';
-//import mongoose_fuzzy_searching = require('mongoose-fuzzy-searching');
 
 const Schema = mongoose.Schema;
 export const UserSchema = new Schema({
     firstName: {
-        type: String
+        type: String,
+        index:true,
+        required:true
     },
     lastName: {
-        type: String
+        type: String,
+        index: true,
+        required:true
     },
     phoneNumber: {
         type: String,
-        select: false
+        index: true,
+        required:true
     },
     email: {
-        type: String
+        type: String,
+        index: true,
+        required:true,
+        unique:true
     },
     password: {
-        type: String
+        type: String,
+        required:true
     },
     reset_password_token: {
         type: String
@@ -29,7 +37,8 @@ export const UserSchema = new Schema({
     roles: [
         {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Role"
+            ref: "Role",
+            index: true
         }
     ],
 
