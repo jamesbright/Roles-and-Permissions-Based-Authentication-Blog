@@ -23,12 +23,16 @@ class AuthController {
 
   public register(req: Request, res: Response, next:any): any {
 
-  //check if already registered
-        User.findOne({ email: req.body.email }, function(err, user){
-            if (err) return res.status(500).send({ status: "Server error", code:500, message:err });
-            if (user) return res.status(404).send({ status:'Not found', code:404, message:"Email already registered" });
-        });
-     
+
+    try {
+      //check if already registered
+      User.findOne({ email: req.body.email }, function (err, user) {
+        if (err) return res.status(500).send({ status: "Server error", code: 500, message: err });
+        if (user) return res.status(404).send({ status: 'Not found', code: 404, message: "Email already registered" });
+      });
+    } catch (err) {
+      console.log(err)
+    }
       
         // encrypt password
         const hashedPassword = bcrypt.hashSync(req.body.password, 8);

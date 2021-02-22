@@ -4,6 +4,7 @@ import { AuthController } from '../controllers/AuthController';
 import { UserController } from '../controllers/UserController';
 import { verifyToken, isAdmin, isSuperAdmin } from '../middlewares/verifyAccess'
 import validateSignup from '../middlewares/validateSignup'
+import validateLogin from '../middlewares/validateLogin'
 
 
 export class Routes {
@@ -24,7 +25,7 @@ export class Routes {
 
         // user login route
         app.route('/api/login')
-            .post(this.authController.login)
+            .post(validateLogin,this.authController.login)
 
         // get all users 
         app.route('/api/users')
@@ -40,10 +41,6 @@ export class Routes {
             .get(this.userController.getUserWithID)
             //only superAdmin is allowed to update user
             .put([verifyToken, isSuperAdmin], this.userController.updateUser)
-
-
-      
-
 
     }
 }

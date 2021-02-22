@@ -1,19 +1,37 @@
-
+import * as Joi from 'joi';
 import { Request, Response } from 'express';
-import { body, validationResult } from 'express-validator';
+
+export default function validateSignup(req: Request, res: Response, next): any {
+
+  //destructure request and store it in body variable
+  const { body } = req;
+
+  //define validation rules for regitration
+  const signUpSchema = Joi.object().keys({
+    firstName: Joi.string().required(),
+    lastName: Joi.string().required(),
+    phoneNumber: Joi.string().required(),
+    email: Joi.string().email().required(),
+    password: Joi.string().min(8).required(),
+    roles: Joi.array(),
+  });
+
+  //perform validation
+  const result = signUpSchema.validate(body);;
+  // destructure result of validation into its' value and errors
+  const { value, error } = result;
+
+  const valid = error == null;
 
 
-export default function validateSignup (req:Request, res:Response, next) : any{
-    //is email a valid email
-  body('email').isEmail();
-  // password must be at least 8 chars long
-  body('password').isLength({ min: 8 });
-    // if theres an error in validation, return
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).send({ status: 'Bad request', code:400, message: errors.array() });
-        }
-  next();
-  
+  //if there are errors return an error message
+  if (!valid) {
+    return res.status(400).send({ status: 'invalid request', code: 422, message: error });
+
+  } else {
+
+    //if there are no errors push request forward
+    next();
+  }
 
 };
