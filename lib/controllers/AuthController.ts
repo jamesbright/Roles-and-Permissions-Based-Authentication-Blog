@@ -7,6 +7,7 @@ import * as bcrypt from 'bcryptjs';
 import * as dotenv from 'dotenv';
 import { UserI } from '../interfaces/user';
 import { RoleI } from '../interfaces/role';
+import { isNullOrUndefined } from 'util';
 // initialize configuration
 dotenv.config()
 
@@ -21,15 +22,20 @@ const Role = mongoose.model<RoleI>('Role', RoleSchema);
 class AuthController {
 
 
-  public register(req: Request, res: Response, next:any): any {
+  public  async register(req: Request, res: Response): Promise<any> {
 
 
     try {
       //check if already registered
-      User.findOne({ email: req.body.email }, function (err, user) {
-        if (err) return res.status(500).send({ status: "Server error", code: 500, message: err });
-        if (user) return res.status(404).send({ status: 'Not found', code: 404, message: "Email already registered" });
+      const user = await  User.findOne({ email: req.body.email }, function (err) {
+        if (err) {
+          return res.status(500).send({ status: "Server error", code: 500, message: err });
+        }
       });
+
+      if (user) {
+        return res.status(400).send({ user: user, status: 'bad request', code: 400, message: "Email already registered" });
+      }
     } catch (err) {
       console.log(err)
     }
