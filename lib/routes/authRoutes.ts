@@ -41,6 +41,19 @@ export class Routes {
             .get(this.userController.getUserWithID)
             //only superAdmin is allowed to update user
             .put([verifyToken, isSuperAdmin], this.userController.updateUser)
+            //only superAdmin is allowed to remove user
+            .delete([verifyToken, isSuperAdmin],this.userController.deleteUser)
+
+        // activate a user with the user's id
+        app.route('/api/user/activate/:userId')
+            //only superAdmin is allowed to activate user
+            .put([verifyToken, isSuperAdmin], this.userController.activateUser)
+
+            
+        // deactivate a user with the user's id
+        app.route('/api/user/deactivate/:userId')
+            //only superAdmin is allowed to activate user
+            .put([verifyToken, isSuperAdmin], this.userController.deActivateUser)
 
     }
 }

@@ -15,19 +15,27 @@ const User = mongoose.model<UserI>('User', UserSchema);
 const Role = mongoose.model<RoleI>('Role', RoleSchema);
 
 function verifyToken(req: Request, res: Response, next: any): any {
-    const token: any = req.headers['x-access-token']; 
+    // const token: any = req.headers['x-access-token']; 
+
+    //Authentication token sent from endpoint
+    const authorizationHeader: any = req.headers.authorization;
+
+    if (authorizationHeader) {
+        const token: any = req.headers.authorization.split(' ')[1]; // Bearer <token>
+
         if (!token) return res.status(403).send({ status: "forbidden", code: 403, message: 'No token provided.' });
 
         jwt.verify(token, process.env.SECRET, function (err, decoded) {
             if (err) return res.status(500).send({ status: "Server error", code: 500, message: err });
 
-            // if verified push request forward
+            // if verified save user id and push request forward
             req['userId'] = decoded.id;
             next();
             return;
 
         });
-  
+    }
+
 }
 
 function isAdmin(req: Request, res: Response, next): any {

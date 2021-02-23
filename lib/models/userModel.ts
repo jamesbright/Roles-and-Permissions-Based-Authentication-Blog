@@ -1,32 +1,31 @@
 import * as mongoose from 'mongoose';
-import * as mongoose_fuzzy_searching from 'mongoose-fuzzy-searching';
 
 const Schema = mongoose.Schema;
 export const UserSchema = new Schema({
     firstName: {
         type: String,
-        index:true,
-        required:true
+        index: true,
+        required: true
     },
     lastName: {
         type: String,
         index: true,
-        required:true
+        required: true
     },
     phoneNumber: {
         type: String,
         index: true,
-        required:true
+        required: true
     },
     email: {
         type: String,
         index: true,
-        required:true,
-        unique:true
+        required: true,
+        unique: true
     },
     password: {
         type: String,
-        required:true
+        required: true
     },
     reset_password_token: {
         type: String
@@ -34,6 +33,8 @@ export const UserSchema = new Schema({
     reset_password_expires: {
         type: String
     },
+    active: Boolean,
+
     roles: [
         {
             type: mongoose.Schema.Types.ObjectId,
@@ -52,4 +53,3 @@ export const UserSchema = new Schema({
     }
 });
 
-UserSchema.plugin(mongoose_fuzzy_searching, { fields: ['firstName', 'lastName'] })

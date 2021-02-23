@@ -1,8 +1,6 @@
 import * as mongoose from 'mongoose';
 
-
-
- interface UserI extends mongoose.Document {
+interface UserI extends mongoose.Document {
      firstName: {
          type: String,
          index: true,
@@ -33,7 +31,11 @@ import * as mongoose from 'mongoose';
      },
      reset_password_expires: {
          type: String
-     },
+    },
+    
+      active:Boolean,
+     
+      
      roles: [
          {
              type: mongoose.Schema.Types.ObjectId,

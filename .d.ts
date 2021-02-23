@@ -1,3 +1,3 @@
-declare module 'mongoose-fuzzy-searching';
+declare module 'mongoose-softdelete';
 
 
