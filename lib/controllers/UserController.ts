@@ -357,9 +357,10 @@ class UserController {
 public async requestPasswordReset(req: Request, res: Response){
  let status: string,
       message: any,
-      code: number;
-  const user = await User.findOne({email: req.body.email });
+    code: number;
 
+  const user = await User.findOne({email: req.body.email });
+ 
   if (!user) {
     code = 404;
     status = "Not found";
@@ -396,7 +397,7 @@ public async requestPasswordReset(req: Request, res: Response){
         <p> Please, click the link below to reset your password</p>
         <a href=${link}">Reset Password</a>`;
 
-
+    console.log('sending mail');
     await mailer
       .send(userEmail, 'password reset request', body)
       .then((result) => {
@@ -412,9 +413,8 @@ public async requestPasswordReset(req: Request, res: Response){
         message = `Email not sent, please try again later`;
        console.error('Error: ', error)
     })
- 
+    
          } 
-  
       return res.status(code).send({ status: status, code: code, message: message });
 
 }
