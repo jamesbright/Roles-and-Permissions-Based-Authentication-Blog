@@ -1,10 +1,21 @@
 import * as mongoose from 'mongoose';
 import { UserSchema } from '../models/userModel';
+import { TokenSchema } from '../models/tokenModel';
 import { Request, Response } from 'express';
 import { UserI } from '../interfaces/user';
+import { TokenI } from '../interfaces/token';
+import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
+import { NodeMailgun } from 'ts-mailgun';
+import * as dotenv from 'dotenv';
+import { StringifyOptions } from 'querystring';
+// initialize configuration
+dotenv.config()
 
 //Create an instance of the user model
 const User = mongoose.model<UserI>('User', UserSchema);
+//Create an instance of the token model
+const Token = mongoose.model<TokenI>('Token', TokenSchema);
 
 
 class UserController {
@@ -215,12 +226,12 @@ class UserController {
 
         //pagination object with all pagination values
         let pagination: object = {
-          'totalPages': totalPages,
+          'totalPages': totalPages,//total number of pages
           'currentPage': currentPage,
-          'users': count,
-          'hasNext': hasNext,
-          'hasPrev': hasPrev,
-          'perPage': limit,
+          'users': count, // number of users
+          'hasNext': hasNext, //is there a next page
+          'hasPrev': hasPrev,//is there a previous page
+          'perPage': limit, //how many users per page
           'prevPage': prevPage,
           'nextPage': nextPage
         }
@@ -283,7 +294,7 @@ class UserController {
      let status: string,
        message: any,
        code: number;
-    //find user by their id and update the new values subsequently
+    //find user by their id and set active to true subsequently
      User.findByIdAndUpdate({ _id: req.params.userId }, { active: true },
        { new: true }, function (err, user) {
       if (err) {
@@ -315,7 +326,7 @@ class UserController {
     let status: string,
       message: any,
       code: number;
-    //find user by their id and update the new values subsequently
+    //find user by their id and set active to false subsequently
      User.findByIdAndUpdate({ _id: req.params.userId }, { active: false},
        { new: true }, function (err, user) {
       if (err) {
@@ -341,6 +352,133 @@ class UserController {
 
 
   }
+
+  
+public async requestPasswordReset(req: Request, res: Response){
+ let status: string,
+      message: any,
+      code: number;
+  const user = await User.findOne({email: req.body.email });
+
+  if (!user) {
+    code = 404;
+    status = "Not found";
+    message = "User not found";
+  } else {
+    
+    const token: TokenI = await Token.findOne({ userId: user._id });
+    if (token) await token.deleteOne();
+    const resetToken: string = crypto.randomBytes(32).toString("hex");
+    const hashedToken: string = await bcrypt.hash(resetToken, Number(process.env.BCRYPT_SALT));
+
+    await new Token({
+      userId: user._id,
+      token: hashedToken,
+      createdAt: Date.now(),
+    }).save();
+
+    //send email to user
+    const mailer: NodeMailgun = new NodeMailgun();
+    mailer.apiKey = process.env.MAILER_API_KEY; // API key
+    mailer.domain = process.env.MAILER_API_DOMAIN; // domain you registered
+    mailer.fromEmail = process.env.MAILER_FROM_EMAIL; // from email
+    mailer.fromTitle = process.env.MAILER_FROM_TITLE; // name you would like to send from
+ 
+    mailer.init();
+
+    //Send email from template
+    const clientURL: string = process.env.CLIENT_URL;
+    const userEmail: string = user.email;
+    const link: string = `${clientURL}/passwordReset?token=${resetToken}&id=${user._id}`;
+ 
+    const body: string = `<h1> <p>Hi ${user.firstName},</p>
+        <p>You requested to reset your password.</p>
+        <p> Please, click the link below to reset your password</p>
+        <a href=${link}">Reset Password</a>`;
+
+
+    await mailer
+      .send(userEmail, 'password reset request', body)
+      .then((result) => {
+        code = 200;
+        status = "Success";
+        message = `email with instructions on how to reset your password successfully sent to ${userEmail}`;
+
+        console.log('Done', result)
+      })
+      .catch((error) => {
+        code = 201;
+        status = "Failed";
+        message = `Email not sent, please try again later`;
+       console.error('Error: ', error)
+    })
+ 
+         } 
+  
+      return res.status(code).send({ status: status, code: code, message: message });
+
+}
+
+
+public async resetPassword (req:Request, res: Response){
+  let status: string,
+      message: any,
+      code: number;
+  const userId: string = req.body.userId;
+  let passwordResetToken: TokenI = await Token.findOne({userId: userId });
+  if (!passwordResetToken) {
+       code = 404;
+        status = "Not found";
+        message = "Password token not found";
+  }else{
+  const isValidToken : boolean = await bcrypt.compare(req.body.token, passwordResetToken.token.toString());
+  if (!isValidToken) {
+         code = 400;
+        status = "bad request";
+        message = "Password token is not valid";
+  }else{
+    const hashedPassword : string = bcrypt.hashSync(req.body.password, Number(process.env.BCRYPT_SALT));
+
+  await User.updateOne(
+    { _id: userId },
+    { $set: { password: hashedPassword } },
+    { new: true }
+  );
+  const user : UserI = await User.findById({ _id: userId });
+  
+  //send email to user notifying them of password reset
+
+    const mailer: NodeMailgun = new NodeMailgun();
+    mailer.apiKey = process.env.MAILER_API_KEY; // API key
+    mailer.domain = process.env.MAILER_API_DOMAIN; // domain you registered
+    mailer.fromEmail = process.env.MAILER_FROM_EMAIL; // from email
+    mailer.fromTitle = process.env.MAILER_FROM_TITLE; // name you would like to send from
+
+mailer.init();
+const email: string = user.email;
+
+const body : string =  `<h1> <p>Hi ${user.firstName},</p>
+        <p>Your password reset was successful.</p>`;
+
+    await mailer
+      .send(email, 'password reset successful', body)
+    .then((result) => console.log('Done', result))
+    .catch((error) => console.error('Error: ', error))
+ 
+
+
+  await passwordResetToken.deleteOne();
+
+   code = 200;
+        status = "Success";
+        message = 'password reset successful';
+    
+  }
+  }
+      return res.status(code).send({status: status, code: code, message: message });
+
+}
+
 
 }
 

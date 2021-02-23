@@ -26,7 +26,7 @@ class AuthController {
 
     try {
       //check if already registered
-      const user = await User.findOne({ email: req.body.email }, function (err) {
+      const user : UserI = await User.findOne({ email: req.body.email }, function (err:any) {
         if (err) {
           return res.status(500).send({ status: "Server error", code: 500, message: err });
         }
@@ -40,7 +40,7 @@ class AuthController {
     }
 
     // encrypt password
-    const hashedPassword = bcrypt.hashSync(req.body.password, 8);
+    const hashedPassword : string = bcrypt.hashSync(req.body.password, Number(process.env.BCRYPT_SALT));
 
     //create new user
     User.create({
@@ -63,7 +63,7 @@ class AuthController {
               {
                 name: { $in: req.body.roles }
               },
-              (err, roles: object) => {
+              (err:any, roles: object) => {
                 if (err) {
                   return res.status(500).send({ status: "Server error", code: 500, message: err });
 
@@ -79,30 +79,30 @@ class AuthController {
                 //save the result
                 user.save(err => {
                   if (err) {
-                    res.status(500).send({ status: "Server error", code: 500, message: err });
-                    return;
+                    return res.status(500).send({ status: "Server error", code: 500, message: err });
+                    
                   }
 
-                  return res.status(200).send({ status: "Success", code: 200, message: 'Successfully registered' });
+                  return res.status(201).send({ status: "Success", code: 201, message: 'Successfully registered' });
                 });
               }
             );
           } else {
-            //if no roles was sent from endpoint then assign superAdmin to the user
-            Role.findOne({ name: "superAdmin" }, (err, role) => {
+            //if no roles was sent from endpoint then assign user role to the user
+            Role.findOne({ name: "user" }, (err, role) => {
               if (err) {
-                res.status(500).send({ status: "Server error", code: 500, message: err });
-                return;
+                return res.status(500).send({ status: "Server error", code: 500, message: err });
+              
               }
               // assign role to user 
               user.roles = [role._id];
               user.save(err => {
                 if (err) {
-                  res.status(500).send({ status: "Server error", code: 500, message: err });
-                  return;
+                  return res.status(500).send({ status: "Server error", code: 500, message: err });
+                  
                 }
 
-                return res.status(200).send({ status: "Success", code: 200, message: 'Successfully registered' });
+                return res.status(201).send({ status: "Success", code: 201, message: 'Successfully registered' });
 
               });
             });
@@ -121,17 +121,17 @@ class AuthController {
   public login(req: Request, res: Response): void {
 
     //get the user using their email
-    User.findOne({ email: req.body.email }, function (err, user) {
+    User.findOne({ email: req.body.email }, function (err:any, user:UserI) {
       if (err) return res.status(500).send({ status: "Server error", code: 500, message: err });
       //if user do not exist return not found
       if (!user) return res.status(404).send({ status: 'Not found', code: 404, message: 'User does not exist.' });
 
       //validate user password
-      const validatePassword = bcrypt.compareSync(req.body.password, user.password);
+      const validatePassword: boolean = bcrypt.compareSync(req.body.password, user.password);
       if (!validatePassword) return res.status(401).send({ auth: false, token: null, status: 'Unauthorized', code: 401, message: 'Wrong password' });
 
       //create and sign a token with the user id and email as payload
-      const token = jwt.sign({ id: user._id, email: user.email }, process.env.SECRET, {
+      const token: string = jwt.sign({ id: user._id, email: user.email }, process.env.SECRET, {
         expiresIn: 86400 // expires in 24 hours
       });
 

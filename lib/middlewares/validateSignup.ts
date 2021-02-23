@@ -1,7 +1,7 @@
 import * as Joi from 'joi';
 import { Request, Response } from 'express';
 
-export default function validateSignup(req: Request, res: Response, next): any {
+export default function validateSignup(req: Request, res: Response, next:any): any {
 
   //destructure request and store it in body variable
   const { body } = req;
@@ -13,11 +13,12 @@ export default function validateSignup(req: Request, res: Response, next): any {
     phoneNumber: Joi.string().required(),
     email: Joi.string().email().required(),
     password: Joi.string().min(8).required(),
-    roles: Joi.array(),
+    roles: Joi.any(),
   });
 
   //perform validation
-  const result = signUpSchema.validate(body);;
+  const result = signUpSchema.validate(body);
+
   // destructure result of validation into its' value and errors
   const { value, error } = result;
 

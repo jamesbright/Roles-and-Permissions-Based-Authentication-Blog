@@ -1,7 +1,7 @@
 import * as Joi from 'joi';
 import { Request, Response } from 'express';
 
-export default function validateLogin(req: Request, res: Response, next): any {
+export default function validateLogin(req: Request, res: Response, next:any): any {
 
     //destructure request and store it in body variable
     const { body } = req;
@@ -13,7 +13,8 @@ export default function validateLogin(req: Request, res: Response, next): any {
     });
 
     //perform validation
-    const result = loginSchema.validate(body);;
+    const result = loginSchema.validate(body);
+
     // destructure result of validation into its' value and errors
     const { value, error } = result;
 

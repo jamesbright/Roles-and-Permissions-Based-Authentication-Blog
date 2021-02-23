@@ -32,7 +32,7 @@ class App {
     private config(): void {
         // set up cors
         const corsOptions = {
-            origin: "http://localhost:3000"
+            origin: process.env.CLIENT_URL
         };
         this.app.use(cors(corsOptions));
 
@@ -45,7 +45,7 @@ class App {
 
     private async initializeRolesAndPermissions() {
    //count number of roles in Role collection
-        const roleCount = await Role.countDocuments()
+        const roleCount : number = await Role.countDocuments()
         // if roles not yet populated, create new roles
         if (roleCount == 0) {
             // array of assignable roles
@@ -68,7 +68,7 @@ class App {
                         }
 
         //count number of data in permissions collection
-        const permiCount = await Permission.countDocuments()
+        const permiCount : number = await Permission.countDocuments()
         // if permissions collection is not yet populated, create new permissions
         if (permiCount == 0) {
             // array of assignable permissions
@@ -163,6 +163,8 @@ class App {
             useFindAndModify: false,
             useCreateIndex: true,
         };
+
+        //connect to mongodb database
         mongoose.connect(this.mongoUrl, options).then(() => {
             console.log("Successfully connected to MongoDB.");
             this.initializeRolesAndPermissions();
