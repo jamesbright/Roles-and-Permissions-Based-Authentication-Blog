@@ -9,6 +9,7 @@
     "tsc": "tsc",
     "build": "npm-run-all clean lint tsc",
     "dev": "nodemon --watch lib/**/*.ts  --exec ts-node lib/index.ts",
+    "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install npm && run build",
     "start": "node ./dist/index.js",
     "prod": "npm run build && npm run start"
   },
