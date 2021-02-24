@@ -7,7 +7,7 @@
     "clean": "rimraf dist/*",
     "lint": "eslint . --ext .ts",
     "tsc": "tsc",
-    "build": "npm-run-all clean lint tsc",
+    "build": "npm-run-all clean tsc",
     "dev": "nodemon --watch lib/**/*.ts  --exec ts-node lib/index.ts",
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install npm && run build",
     "start": "node ./dist/index.js",
