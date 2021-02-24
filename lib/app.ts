@@ -8,7 +8,7 @@ import { PermissionSchema } from "./models/permissionModel";
 import { RoleI } from './interfaces/role';
 import { PermissionI } from './interfaces/permission';
 import * as dotenv from 'dotenv';
-//import * as mongo from 'mongodb';
+
 
 // initialize configuration
 dotenv.config()
@@ -45,31 +45,31 @@ class App {
     }
 
     private async initializeRolesAndPermissions() {
-      
-            //count number of roles in Role collection
-            const roleCount: number = await Role.countDocuments()
-            // if roles not yet populated, create new roles
-            if (roleCount == 0) {
-                // array of assignable roles
-                const roles: string[] = ["user", "admin", "superAdmin"];
-                roles.forEach(role => {
-                    new Role({
-                        name: role
-                    }).save(err => {
-                        if (err) {
-                            console.log("error", err);
-                        }
 
-                        console.log(`added ${role} to roles collection`);
+        //count number of roles in Role collection
+        const roleCount: number = await Role.countDocuments()
+        // if roles not yet populated, create new roles
+        if (roleCount == 0) {
+            // array of assignable roles
+            const roles: string[] = ["user", "admin", "superAdmin"];
+            roles.forEach(role => {
+                new Role({
+                    name: role
+                }).save(err => {
+                    if (err) {
+                        console.log("error", err);
+                    }
 
-                    });
+                    console.log(`added ${role} to roles collection`);
 
                 });
-            }
+
+            });
+        }
 
 
 
-       
+
 
         //count number of data in permissions collection
         const permiCount: number = await Permission.countDocuments()
@@ -163,39 +163,27 @@ class App {
     }
 
     private mongoSetup(): void {
-        //mongolab connection
-        /**
-        const MongoClient = mongo.MongoClient;
-        const uri = this.mongoUrl;
-        const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-        client.connect(err => {
-            if (err) {
-                console.log(`connection error ${err}`);
-            } else {
-                console.log('connected db')
-                this.initializeRolesAndPermissions();
-            }
+    
+        // mongodb connection
 
-        });
-**/
-       //locally hosted mongodb connection
-                const options = {
-                    useNewUrlParser: true,
-                    useUnifiedTopology: true,
-                    useFindAndModify: false,
-                    useCreateIndex: true,
-                };
-        
-                //connect to mongodb database
-                mongoose.connect(this.mongoUrl, options).then(() => {
-                    console.log("Successfully connected to MongoDB.");
-                    this.initializeRolesAndPermissions();
-                })
-                    .catch(err => {
-                        console.error("Connection error", err);
-                        process.exit();
-                    });
-                   
+        const options = {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            useFindAndModify: false,
+            useCreateIndex: true,
+        };
+
+        //connect to mongodb database
+        mongoose.connect(this.mongoUrl, options).then(() => {
+            console.log("Successfully connected to MongoDB.");
+            this.initializeRolesAndPermissions();
+        })
+
+            .catch(err => {
+                console.error("Connection error", err);
+                process.exit();
+            });
+
     }
 }
 export default new App().app;
