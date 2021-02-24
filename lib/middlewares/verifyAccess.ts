@@ -68,8 +68,7 @@ function isAdmin(req: Request, res: Response, next): any {
             }
         );
     });
-};
-
+}
 function isSuperAdmin(req: Request, res: Response, next: any): any {
     User.findById(req['userId']).exec((err, user) => {
         if (err) {
@@ -100,7 +99,7 @@ function isSuperAdmin(req: Request, res: Response, next: any): any {
             }
         );
     });
-};
+}
 
 
 export { verifyToken, isAdmin, isSuperAdmin }

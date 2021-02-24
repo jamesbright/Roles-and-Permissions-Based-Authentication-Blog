@@ -8,6 +8,7 @@ import { PermissionSchema } from "./models/permissionModel";
 import { RoleI } from './interfaces/role';
 import { PermissionI } from './interfaces/permission';
 import * as dotenv from 'dotenv';
+//import * as mongo from 'mongodb';
 
 // initialize configuration
 dotenv.config()
@@ -16,7 +17,7 @@ dotenv.config()
 const Role = mongoose.model<RoleI>('Role', RoleSchema);
 
 //Create an instance of permission model
-const Permission= mongoose.model<PermissionI>('Permission', PermissionSchema);
+const Permission = mongoose.model<PermissionI>('Permission', PermissionSchema);
 class App {
     public app: express.Application;
     public route: Routes = new Routes();
@@ -44,35 +45,38 @@ class App {
     }
 
     private async initializeRolesAndPermissions() {
-   //count number of roles in Role collection
-        const roleCount : number = await Role.countDocuments()
-        // if roles not yet populated, create new roles
-        if (roleCount == 0) {
-            // array of assignable roles
-            const roles: string[] = ["user", "admin", "superAdmin"];
-            roles.forEach(role => {
-                new Role({
-                    name: role
-                }).save(err => {
-                    if (err) {
-                        console.log("error", err);
-                    }
-
-                    console.log(`added ${role} to roles collection`);
-
-                     });
-                           
-                       });
-           
-
+      
+            //count number of roles in Role collection
+            const roleCount: number = await Role.countDocuments()
+            // if roles not yet populated, create new roles
+            if (roleCount == 0) {
+                // array of assignable roles
+                const roles: string[] = ["user", "admin", "superAdmin"];
+                roles.forEach(role => {
+                    new Role({
+                        name: role
+                    }).save(err => {
+                        if (err) {
+                            console.log("error", err);
                         }
 
+                        console.log(`added ${role} to roles collection`);
+
+                    });
+
+                });
+            }
+
+
+
+       
+
         //count number of data in permissions collection
-        const permiCount : number = await Permission.countDocuments()
+        const permiCount: number = await Permission.countDocuments()
         // if permissions collection is not yet populated, create new permissions
         if (permiCount == 0) {
             // array of assignable permissions
-            const permissions: string[] = ["create", "edit", "delete","activate","deactivate","suspend","upgrade","update"];
+            const permissions: string[] = ["create", "edit", "delete", "activate", "deactivate", "suspend", "upgrade", "update"];
             permissions.forEach(permission => {
                 new Permission({
                     name: permission
@@ -83,96 +87,115 @@ class App {
                     console.log(`added ${permission} to permissions collection`);
                 });
             });
-      
-     
 
-// create permissions for superAdmin
-          Role.findOne({ name: "superAdmin" }, (err, role) => {
 
-                            if (err) {
-                               console.log(err)
-                            }
-                           // list of assignable permissions
-                            const assignables:string[] =["delete","activate","deactivate","suspend","upgrade","update"];
-                          Permission.find({
-                                name: { $in: assignables }
-                            },(err, permissions) => {
+
+            // create permissions for superAdmin
+            Role.findOne({ name: "superAdmin" }, (err, role) => {
+
+                if (err) {
+                    console.log(err)
+                }
+                // list of assignable permissions
+                const assignables: string[] = ["delete", "activate", "deactivate", "suspend", "upgrade", "update"];
+                Permission.find({
+                    name: { $in: assignables }
+                }, (err, permissions) => {
                     if (err) {
-                            console.log(err)
-                            }
-// iterate through permissions object
- Object.keys(permissions).forEach((key: string) => {
-     // push permissions into superadmin role
-                                  role.permissions.push(permissions[key]['_id']);
-                                
-                              });
-//save changes
-                           role.save(err => {
-                                if (err) {
-                                    console.log('failed to add permissions to superAdmin')
-                                  
-                                }
-                                console.log('added permissions to superAdmin')
-         
-                            });   });                  
-                        });
+                        console.log(err)
+                    }
+                    // iterate through permissions object
+                    Object.keys(permissions).forEach((key: string) => {
+                        // push permissions into superadmin role
+                        role.permissions.push(permissions[key]['_id']);
+
+                    });
+                    //save changes
+                    role.save(err => {
+                        if (err) {
+                            console.log('failed to add permissions to superAdmin')
+
+                        }
+                        console.log('added permissions to superAdmin')
+
+                    });
+                });
+            });
 
 
-// create permissions for admin
-          Role.findOne({ name: "admin" }, (err, role) => {
+            // create permissions for admin
+            Role.findOne({ name: "admin" }, (err, role) => {
 
-                            if (err) {
-                               console.log(err)
-                            }
-//array of assignable permissions
-                            const assignables:string[] =["create", "edit", "delete"]
-                          Permission.find({
-                                name: { $in: assignables }
-                            },(err, permissions) => {
+                if (err) {
+                    console.log(err)
+                }
+                //array of assignable permissions
+                const assignables: string[] = ["create", "edit", "delete"]
+                Permission.find({
+                    name: { $in: assignables }
+                }, (err, permissions) => {
                     if (err) {
-                            console.log(err)
-                            }
-// iterate through permissions object
- Object.keys(permissions).forEach((key: string) => {
+                        console.log(err)
+                    }
+                    // iterate through permissions object
+                    Object.keys(permissions).forEach((key: string) => {
 
-        //push permissions into admin role
-        role.permissions.push(permissions[key]['_id']);
-                                
-                              });
-                              //save changes
-                           role.save(err => {
-                                if (err) {
-                                    console.log('failed to add permissions to admin')
-                                       
-                                }
-                                console.log('added permissions to admin')
-         
-                            });   });                  
-                        });
+                        //push permissions into admin role
+                        role.permissions.push(permissions[key]['_id']);
+
+                    });
+                    //save changes
+                    role.save(err => {
+                        if (err) {
+                            console.log('failed to add permissions to admin')
+
+                        }
+                        console.log('added permissions to admin')
+
+                    });
+                });
+            });
 
 
-               }
- 
+        }
+
 
     }
 
     private mongoSetup(): void {
-        const options = {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            useFindAndModify: false,
-            useCreateIndex: true,
-        };
+        //mongolab connection
+        /**
+        const MongoClient = mongo.MongoClient;
+        const uri = this.mongoUrl;
+        const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+        client.connect(err => {
+            if (err) {
+                console.log(`connection error ${err}`);
+            } else {
+                console.log('connected db')
+                this.initializeRolesAndPermissions();
+            }
 
-        //connect to mongodb database
-        mongoose.connect(this.mongoUrl, options).then(() => {
-            console.log("Successfully connected to MongoDB.");
-            this.initializeRolesAndPermissions();
-        })
-            .catch(err => {
-                console.error("Connection error", err);
-                process.exit();
-            });
+        });
+**/
+       //locally hosted mongodb connection
+                const options = {
+                    useNewUrlParser: true,
+                    useUnifiedTopology: true,
+                    useFindAndModify: false,
+                    useCreateIndex: true,
+                };
+        
+                //connect to mongodb database
+                mongoose.connect(this.mongoUrl, options).then(() => {
+                    console.log("Successfully connected to MongoDB.");
+                    this.initializeRolesAndPermissions();
+                })
+                    .catch(err => {
+                        console.error("Connection error", err);
+                        process.exit();
+                    });
+                   
     }
 }
 export default new App().app;

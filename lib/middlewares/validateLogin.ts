@@ -31,4 +31,4 @@ export default function validateLogin(req: Request, res: Response, next:any): an
         next();
     }
 
-};
+}

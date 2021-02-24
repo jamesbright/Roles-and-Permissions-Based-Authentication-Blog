@@ -8,15 +8,18 @@ import validateLogin from '../middlewares/validateLogin'
 
 
 export class Routes {
+    //create an instance of AuthController
     public authController: AuthController = new AuthController();
+    //create an instance of UserController
     public userController: UserController = new UserController();
 
     public routes(app: express.Application): void {
 
+        //base url
         app.route('/')
             .get((req: Request, res: Response) => {
                 res.status(200).send({
-                    message: 'Hello,wellcome to Myyinvest'
+                    message: 'Hello,wellcome to Myyinvest tech interns auth API'
                 })
             });
         // user registration route
@@ -42,26 +45,27 @@ export class Routes {
             //only superAdmin user is allowed to update user details
             .put([verifyToken, isSuperAdmin], this.userController.updateUser)
             //only superAdmin user is allowed to remove user
-            .delete([verifyToken, isSuperAdmin], this.userController.deleteUser);
+            .delete([verifyToken, isSuperAdmin], this.userController.deleteUser)
 
         // activate a user with the user's id
         app.route('/api/user/activate/:userId')
             //only superAdmin user is allowed to activate users
-            .put([verifyToken, isSuperAdmin], this.userController.activateUser);
+            .put([verifyToken, isSuperAdmin], this.userController.activateUser)
 
-            
+
         // deactivate a user with the user's id
         app.route('/api/user/deactivate/:userId')
             //only superAdmin user is allowed to deactivate users
-            .put([verifyToken, isSuperAdmin], this.userController.deActivateUser);
-        
-        //password reset routes
-        app.route('/api/user/request-password-reset')
-            .get(this.userController.requestPasswordReset);
+            .put([verifyToken, isSuperAdmin], this.userController.deActivateUser)
 
-        
-        app.route('/api/user/reset-password')
-            .post(this.userController.resetPassword);
+        //password reset routes
+        app.route('/api/users/request-password-reset')
+            .post(this.userController.requestPasswordReset)
+
+
+        app.route('/api/users/reset-password')
+            .get(this.userController.passwordReset)
 
     }
 }
+
