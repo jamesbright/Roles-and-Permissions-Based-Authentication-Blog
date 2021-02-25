@@ -10,7 +10,7 @@ export default function validateSignup(req: Request, res: Response, next:any): a
   const signUpSchema = Joi.object().keys({
     firstName: Joi.string().required(),
     lastName: Joi.string().required(),
-    phoneNumber: Joi.string().required(),
+    phoneNumber: Joi.string().required().min(11),
     email: Joi.string().email().required(),
     password: Joi.string().min(8).required(),
     roles: Joi.array(),

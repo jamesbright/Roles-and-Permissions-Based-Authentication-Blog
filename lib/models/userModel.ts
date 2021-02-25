@@ -43,9 +43,8 @@ export const UserSchema = new Schema({
         }
     ],
 
-    created_at: {
-        type: Date,
-        default: Date.now
+    createdAt: {
+        type: Date
     },
     updatedAt: {
         type: Date,

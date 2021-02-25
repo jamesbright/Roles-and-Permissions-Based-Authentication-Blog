@@ -140,7 +140,7 @@ class UserController {
       message: any,
       code: number;
     //find user by their id and update the new values subsequently
-    User.findOneAndUpdate({ _id: req.params.userId }, req.body, { new: true }, function (err, user) {
+    User.findOneAndUpdate({ _id: req.params.userId },  req.body, { new: true }, function (err, user) {
       if (err) {
         code = 500;
         status = "Server error";
@@ -294,7 +294,7 @@ class UserController {
       message: any,
       code: number;
     //find user by their id and set active to true subsequently
-    User.findByIdAndUpdate({ _id: req.params.userId }, { active: true },
+    User.findByIdAndUpdate({ _id: req.params.userId }, { active: true, updatedAt: Date.now()  },
       { new: true }, function (err, user) {
         if (err) {
           code = 500;
@@ -326,7 +326,7 @@ class UserController {
       message: any,
       code: number;
     //find user by their id and set active to false subsequently
-    User.findByIdAndUpdate({ _id: req.params.userId }, { active: false },
+    User.findByIdAndUpdate({ _id: req.params.userId }, { active: false, updatedAt:Date.now() },
       { new: true }, function (err, user) {
         if (err) {
           code = 500;
@@ -385,16 +385,16 @@ class UserController {
 
       //send email to user
       const mailer: NodeMailgun = new NodeMailgun();
-      mailer.apiKey = process.env.MAILER_API_KEY; // API key
-      mailer.domain = process.env.MAILER_API_DOMAIN; // domain you registered
+      mailer.apiKey = process.env.MAILER_API_KEY; //mailgun API key
+      mailer.domain = process.env.MAILER_API_DOMAIN; // domain you registered with mailgun
       mailer.fromEmail = process.env.MAILER_FROM_EMAIL; // from email
       mailer.fromTitle = process.env.MAILER_FROM_TITLE; // name you would like to send from
 
       mailer.init();
 
-      const clientURL: string = process.env.CLIENT_URL;//domain name
-      const userEmail: string = user.email; //user's email address to send to
-      const link  = `${clientURL}/api/users/passwordReset?token=${resetToken}&id=${user._id}`;// passwordReset endpoint
+      const clientURL: string = process.env.CLIENT_URL;//frontend domain name
+      const userEmail: string = user.email; //user's email address to send email to
+      const link  = `${clientURL}/passwordReset?token=${resetToken}&id=${user._id}`;// passwordReset endpoint
 
       //message to be displayed to user
       const body  = `<h1> <p>Hi ${user.firstName},</p>

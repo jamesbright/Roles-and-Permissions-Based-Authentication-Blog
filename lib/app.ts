@@ -33,7 +33,7 @@ class App {
     private config(): void {
         // set up cors
         const corsOptions = {
-            origin: process.env.CLIENT_URL
+            origin: process.env.URL
         };
         this.app.use(cors(corsOptions));
 

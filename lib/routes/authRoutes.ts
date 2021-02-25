@@ -64,7 +64,7 @@ export class Routes {
 
 
         app.route('/api/users/reset-password')
-            .get(this.userController.passwordReset)
+            .post(this.userController.passwordReset)
 
     }
 }

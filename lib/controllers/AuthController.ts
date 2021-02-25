@@ -49,7 +49,8 @@ class AuthController {
       phoneNumber: req.body.phoneNumber,
       email: req.body.email,
       password: hashedPassword,
-      active:true
+      active: true,
+      createdAt:Date.now()
     },
       (err, user) => {
         if (err) {
