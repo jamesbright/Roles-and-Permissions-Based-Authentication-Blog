@@ -155,7 +155,7 @@ class UserController {
       message: any,
       code: number;
     //find user by their id and update the new values subsequently
-    User.findOneAndUpdate({ _id: req.params.userId }, req.body, { new: true }, function (err, user) {
+    User.findOneAndUpdate({ _id: req.body.userId }, req.body, { new: true }, function (err, user) {
       if (err) {
         code = 500;
         status = "Server error";

@@ -39,8 +39,15 @@ export class Routes {
         // get a user with the user's id
         app.route('/api/user/get/:userId')
             .get(this.userController.getUserWithID)
+
+
+        // get a user with the user's id
+        app.route('/api/user/update')
             //only superAdmin user is allowed to update user details
             .put([verifyToken, isSuperAdmin], this.userController.updateUser)
+        
+        // get a user with the user's id
+        app.route('/api/user/delete/:userId')
             //only superAdmin user is allowed to remove user
             .delete([verifyToken, isSuperAdmin], this.userController.deleteUser)
 
