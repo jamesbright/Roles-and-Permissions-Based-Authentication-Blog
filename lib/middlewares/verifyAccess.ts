@@ -25,7 +25,7 @@ function verifyToken(req: Request, res: Response, next: any): any {
 
         if (!token) return res.status(403).send({ status: "forbidden", code: 403, message: 'No token provided.' });
 
-        jwt.verify(token, process.env.SECRET, function (err:any, decoded:any) {
+        jwt.verify(token, process.env.SECRET, function (err: any, decoded: any) {
             if (err) return res.status(500).send({ status: "Server error", code: 500, message: err });
 
             // if verified save user id and push request forward
@@ -80,7 +80,7 @@ function isSuperAdmin(req: Request, res: Response, next: any): any {
             {
                 _id: { $in: user.roles }
             },
-            (err:any, roles) => {
+            (err: any, roles) => {
                 if (err) {
                     return res.status(500).send({ message: err });
 

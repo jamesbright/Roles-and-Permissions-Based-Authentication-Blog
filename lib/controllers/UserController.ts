@@ -1,9 +1,11 @@
 import * as mongoose from 'mongoose';
 import { UserSchema } from '../models/userModel';
 import { TokenSchema } from '../models/tokenModel';
+import { TrashSchema } from '../models/trashModel';
 import { Request, Response } from 'express';
 import { UserI } from '../interfaces/user';
 import { TokenI } from '../interfaces/token';
+import { TrashI } from '../interfaces/trash';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { NodeMailgun } from 'ts-mailgun';
@@ -11,10 +13,13 @@ import * as dotenv from 'dotenv';
 // initialize configuration
 dotenv.config()
 
-//Create an instance of the user model
+//Create an instance of  user model
 const User = mongoose.model<UserI>('User', UserSchema);
-//Create an instance of the token model
+User.createIndexes()
+//Create an instance of token model
 const Token = mongoose.model<TokenI>('Token', TokenSchema);
+//Create an instance of trash model
+const Trash = mongoose.model<TrashI>('Trash', TrashSchema);
 
 
 class UserController {
@@ -27,16 +32,26 @@ class UserController {
       code: number;
 
     // get limit and page number from request
-    const currentPage: number = req.body.page;
-    const limit: number = req.body.limit;
+    const currentPage: number = Number(req.query.page);
+    const limit: number = Number(req.query.limit);
+    const orderBy: number = Number(req.query.orderBy);
     let hasNext: boolean,
-      hasPrev: boolean;
+      hasPrev: boolean,
+      query: object;
+    if (req.query.search) {
+
+      const search = req.query.search;
+      //query to search for text
+      query = { $text: { $search: search } };
+    } else {
+      query = null
+    }
 
     try {
       //sort by firstname in ascending order
-      const sort = { firstName: 1 };
+      const sort = { firstName: orderBy };
       // execute query with page and limit values
-      User.find(async function (err: any, users: any) {
+      User.find(query, async function (err: any, users: any) {
         // get total documents in the User collection 
         const count: number = await User.countDocuments();
         let totalPages: number;
@@ -87,8 +102,8 @@ class UserController {
         }
         //get current and next url
         const links: Record<string, unknown> = {
-          'nextLink': `${req.protocol}://${req.get('host')}${req.originalUrl}?page=${nextPage}&limit=${limit}`,
-          'prevLink': `${req.protocol}://${req.get('host')}${req.originalUrl}?page=${prevPage}&limit=${limit}`
+          'nextLink': `${req.protocol}://${req.get('host')}?page=${nextPage}&limit=${limit}`,
+          'prevLink': `${req.protocol}://${req.get('host')}?page=${prevPage}&limit=${limit}`
         };
         // return response with posts, calculated total pages, and current page
         return res.status(code).send({ users, pagination: pagination, status: status, code: code, message: message, links: links });
@@ -107,7 +122,7 @@ class UserController {
     }
   }
 
-  public getUserWithID(req: Request, res: Response):void {
+  public getUserWithID(req: Request, res: Response): void {
 
     let status: string,
       message: any,
@@ -134,13 +149,13 @@ class UserController {
     }).select('-password'); //do not include password
   }
 
-  public updateUser(req: Request, res: Response):void {
+  public updateUser(req: Request, res: Response): void {
 
     let status: string,
       message: any,
       code: number;
     //find user by their id and update the new values subsequently
-    User.findOneAndUpdate({ _id: req.params.userId },  req.body, { new: true }, function (err, user) {
+    User.findOneAndUpdate({ _id: req.params.userId }, req.body, { new: true }, function (err, user) {
       if (err) {
         code = 500;
         status = "Server error";
@@ -163,101 +178,44 @@ class UserController {
   }
 
 
-  public search(req: Request, res: Response) :void{
+  public softDeleteUser(req: Request, res: Response): void {
 
     let status: string,
       message: any,
       code: number;
-
-
-    // get limit and page number from request
-    const currentPage: number = req.body.page;
-    const limit: number = req.body.limit;
-    let hasNext: boolean,
-      hasPrev: boolean;
-
-    //sort by firstname in ascending order
-    const sort = { firstName: 1 };
-
-    //query to search for text
-    const query = { $text: { $search: req.params.searchTerm } };
-
-    try {
-      //search for users using the searchTerm
-      User.find(query, async function (err: any, users: any) {
-
-        // get total documents in the User collection 
-        const count: number = await User.countDocuments();
-        let totalPages: number;
-        if (err) {
-          code = 500;
-          status = "Server error";
-          message = "There was a problem with the server.";
-          totalPages = 0;
+    //find user by their id and update the new values subsequently
+    User.findById({ _id: req.params.userId }, async function (err, user) {
+      if (err) {
+        code = 500;
+        status = "Server error";
+        message = "There was a problem with the server.";
+      } else {
+        if (!user) {
+          code = 404;
+          status = "Not found";
+          message = "User not found";
         } else {
-          if (users.length == 0) {
-            code = 404;
-            status = "Not found";
-            message = "Users not found";
-            totalPages = 0;
-          } else {
-            code = 200;
-            status = "Success";
-            message = "Endpoint returned successfully”";
-            totalPages = Math.ceil(count / limit);
+          let collectionName: string = 'userCollection';
+          let collectionObject: object = user;
+          let softDelete = new Trash({ collectionName, collectionObject });
+          await softDelete.save();
+          await User.deleteOne(user);
+          code = 200;
+          status = "Success";
+          message = "User removed successfully”";
 
-          }
         }
-
-        if (currentPage > 1)
-          hasPrev = true;
-        else
-          hasPrev = false;
-
-        if (totalPages > currentPage)
-          hasNext = true;
-        else
-          hasNext = false;
-
-        //calculate values for previous and next page
-        const prevPage: number = Number(currentPage) - 1;
-        const nextPage: number = Number(currentPage) + 1;
-
-        //pagination object with all pagination values
-        const pagination: Record<string, unknown> = {
-          'totalPages': totalPages,//total number of pages
-          'currentPage': currentPage,
-          'users': count, // number of users
-          'hasNext': hasNext, //is there a next page
-          'hasPrev': hasPrev,//is there a previous page
-          'perPage': limit, //how many users per page
-          'prevPage': prevPage,
-          'nextPage': nextPage
-        }
-        //get current and next url
-        const links: Record<string, unknown> = {
-          'nextLink': `${req.protocol}://${req.get('host')}${req.originalUrl}?page=${nextPage}&limit=${limit}`,
-          'prevLink': `${req.protocol}://${req.get('host')}${req.originalUrl}?page=${prevPage}&limit=${limit}`
-        };
-        // return response with posts, calculated total pages, and current page
-        return res.status(code).send({ users, pagination: pagination, status: status, code: code, message: message, links: links });
+      }
 
 
+      return res.status(code).send({ status: status, code: code, message: message });
 
-      }).populate("roles", "-__v")
-        .limit(limit * 1)//prevPage = (currentPage - 1) * limit
-        .skip((currentPage - 1) * limit)
-        .sort(sort) //sort by firstname
-        .select('-password') //do not select password
-        .exec();
-
-    } catch (err) {
-      console.log(err);
-    }
+    });
 
   }
 
-  public deleteUser(req: Request, res: Response):void {
+
+  public deleteUser(req: Request, res: Response): void {
 
     let status: string,
       message: any,
@@ -275,26 +233,27 @@ class UserController {
         message = "User not found";
       } else {
 
-        code = 200;
+        code = 204;
         status = "Success";
         message = "User removed successfully”";
       }
 
 
-      return res.status(code).send({ user: user, status: status, code: code, message: message });
+      return res.status(code).send({ status: status, code: code, message: message });
 
-    }).select('-password');
+    });
 
 
   }
 
-  public activateUser(req: Request, res: Response):void {
+  public activateUser(req: Request, res: Response): void {
 
     let status: string,
       message: any,
       code: number;
+
     //find user by their id and set active to true subsequently
-    User.findByIdAndUpdate({ _id: req.params.userId }, { active: true, updatedAt: Date.now()  },
+    User.findByIdAndUpdate({ _id: req.params.userId }, { active: req.body.active, updatedAt: Date.now() },
       { new: true }, function (err, user) {
         if (err) {
           code = 500;
@@ -320,40 +279,8 @@ class UserController {
 
 
 
-  public deActivateUser(req: Request, res: Response):void {
 
-    let status: string,
-      message: any,
-      code: number;
-    //find user by their id and set active to false subsequently
-    User.findByIdAndUpdate({ _id: req.params.userId }, { active: false, updatedAt:Date.now() },
-      { new: true }, function (err, user) {
-        if (err) {
-          code = 500;
-          status = "Server error";
-          message = "There was a problem with the server.";
-        }
-        if (!user) {
-          code = 404;
-          status = "Not found";
-          message = "User not found";
-        } else {
-
-          code = 200;
-          status = "Success";
-          message = "User deactivated successfully”";
-        }
-
-
-        return res.status(code).send({ user: user, status: status, code: code, message: message });
-
-      }).select('-password');
-
-
-  }
-
-
-  public async requestPasswordReset(req: Request, res: Response): Promise<any>{
+  public async requestPasswordReset(req: Request, res: Response): Promise<any> {
     let status: string,
       message: any,
       code: number;
@@ -394,10 +321,10 @@ class UserController {
 
       const clientURL: string = process.env.CLIENT_URL;//frontend domain name
       const userEmail: string = user.email; //user's email address to send email to
-      const link  = `${clientURL}/passwordReset?token=${resetToken}&id=${user._id}`;// passwordReset endpoint
+      const link = `${clientURL}/passwordReset?token=${resetToken}&id=${user._id}`;// passwordReset endpoint
 
       //message to be displayed to user
-      const body  = `<h1> <p>Hi ${user.firstName},</p>
+      const body = `<h1> <p>Hi ${user.firstName},</p>
         <p>You requested to reset your password.</p>
         <p> Please, click the link below to reset your password</p>
         <a href=${link}">Reset Password</a>`;
@@ -429,12 +356,14 @@ class UserController {
   }
 
 
-  public async passwordReset(req: Request, res: Response):Promise<any> {
+  public async passwordReset(req: Request, res: Response): Promise<any> {
     let status: string,
       message: any,
       code: number;
 
-    const userId: string = req.body.userId;
+    const userId: string = req.query.userId as string;
+    const token: string = req.query.token as string;
+    const password: string = req.query.password as string;
     //get user's password reset token 
     const passwordResetToken: TokenI = await Token.findOne({ userId: userId });
     if (!passwordResetToken) {
@@ -447,14 +376,14 @@ class UserController {
     } else {
 
       //check if reset token is valid
-      const isValidToken: boolean = await bcrypt.compare(req.body.token, passwordResetToken.token);
+      const isValidToken: boolean = await bcrypt.compare(token, passwordResetToken.token);
       if (!isValidToken) {
         code = 400;
         status = "bad request";
         message = "Password token is not valid";
       } else {
         //hash new user password
-        const hashedPassword: string = bcrypt.hashSync(req.body.password, Number(process.env.BCRYPT_SALT));
+        const hashedPassword: string = bcrypt.hashSync(password, Number(process.env.BCRYPT_SALT));
 
         //save new password
         await User.updateOne(
@@ -481,7 +410,7 @@ class UserController {
 
         await mailer
           .send(email, 'password reset successful', body)
-          .then((result) => console.log('Done', result))
+          .then((result) => console.log('Done sending mail', result))
           .catch((error) => console.error('Error: ', error))
 
         //when done delete user's password reset token fron db

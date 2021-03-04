@@ -23,47 +23,44 @@ export class Routes {
                 })
             });
         // user registration route
-        app.route('/api/register')
+        app.route('/api/auth/register')
             .post(validateSignup, this.authController.register);
 
         // user login route
-        app.route('/api/login')
+        app.route('/api/auth/login')
             .post(validateLogin, this.authController.login);
 
         // get all users 
-        app.route('/api/users')
+        app.route('/api/users/get')
             .get(this.userController.getAllUsers);
 
-        // search for users 
-        app.route('/api/users/search/:searchTerm')
-            .get(this.userController.search);
-
+    
 
         // get a user with the user's id
-        app.route('/api/user/:userId')
+        app.route('/api/user/get/:userId')
             .get(this.userController.getUserWithID)
             //only superAdmin user is allowed to update user details
             .put([verifyToken, isSuperAdmin], this.userController.updateUser)
             //only superAdmin user is allowed to remove user
             .delete([verifyToken, isSuperAdmin], this.userController.deleteUser)
 
+        // soft delete a user with the user's id
+        app.route('/api/user/softdelete/:userId')
+            //only superAdmin user is allowed to soft delete users
+            .delete([verifyToken, isSuperAdmin], this.userController.softDeleteUser)
+        
         // activate a user with the user's id
         app.route('/api/user/activate/:userId')
-            //only superAdmin user is allowed to activate users
-            .put([verifyToken, isSuperAdmin], this.userController.activateUser)
+            //only superAdmin user is allowed to activate or deactivate users
+            .post([verifyToken, isSuperAdmin], this.userController.activateUser)
 
-
-        // deactivate a user with the user's id
-        app.route('/api/user/deactivate/:userId')
-            //only superAdmin user is allowed to deactivate users
-            .put([verifyToken, isSuperAdmin], this.userController.deActivateUser)
 
         //password reset routes
-        app.route('/api/users/request-password-reset')
+        app.route('/api/auth/request-password-reset')
             .post(this.userController.requestPasswordReset)
 
 
-        app.route('/api/users/reset-password')
+        app.route('/api/auth/reset-password')
             .post(this.userController.passwordReset)
 
     }

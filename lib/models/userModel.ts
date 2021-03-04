@@ -51,4 +51,4 @@ export const UserSchema = new Schema({
         default: Date.now
     }
 });
-
+UserSchema.index({ firstName: 'text', lastName: 'text', email: 'text', phoneNumber: 'text', createdAt: 'text', });

@@ -28,6 +28,7 @@
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.11.15",
     "mongoose-fuzzy-searching": "^2.0.2",
+    "swagger-autogen": "^2.6.8",
     "ts-mailgun": "^0.4.3"
   },
   "devDependencies": {
