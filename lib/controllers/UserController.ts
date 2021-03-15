@@ -41,9 +41,9 @@ class UserController {
       code: number;
 
     // get limit and page number from request
-    const currentPage: number = Number(req.query.page);
-    const limit: number = Number(req.query.limit);
-    const orderBy: number = Number(req.query.orderBy);
+    const currentPage: number = Number(req.query.page) || 1;
+    const limit: number = Number(req.query.limit) || 5;
+    const orderBy: number = Number(req.query.orderBy) || 1;
     let hasNext: boolean,
       hasPrev: boolean,
       query: object;
@@ -196,7 +196,7 @@ class UserController {
                     user.roles.push(role);
                   })
                 } else {
-                  return res.status(400).send({ status: "bad request", code: 400, message: "Roles already assigned to user" });
+                  return res.status(400).send({ status: "bad request", code: 400, message: "Role already assigned to user" });
 
                 }
 
