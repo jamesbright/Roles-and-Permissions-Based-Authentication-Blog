@@ -19,7 +19,7 @@ export class Routes {
         app.route('/')
             .get((req: Request, res: Response) => {
                 res.status(200).send({
-                    message: 'Hello,wellcome to Myyinvest tech interns auth API'
+                    message: "I think companies need to put up tools that put privacy and security in the hands of their users and make it easy to understand those tools. In Google's case, two-step verification is a perfect example of this. ...Jared Cohen"
                 })
             });
 
