@@ -40,15 +40,12 @@ export const UserSchema = new Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: "Role",
             index: true
+            
         }
     ],
 
-    createdAt: {
-        type: Date
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
-    }
-});
+ 
+},
+    { timestamps: true }
+);
 UserSchema.index({ firstName: 'text', lastName: 'text', email: 'text', phoneNumber: 'text', createdAt: 'text', });

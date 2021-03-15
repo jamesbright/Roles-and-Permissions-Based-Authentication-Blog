@@ -13,7 +13,7 @@ export default function validateSignup(req: Request, res: Response, next:any): a
     phoneNumber: Joi.string().required().min(11),
     email: Joi.string().email().required(),
     password: Joi.string().min(8).required(),
-    roles: Joi.array(),
+   
   });
 
   //perform validation

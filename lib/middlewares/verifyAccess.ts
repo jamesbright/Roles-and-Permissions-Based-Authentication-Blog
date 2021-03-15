@@ -22,7 +22,7 @@ function verifyToken(req: Request, res: Response, next: any): any {
 
     if (authorizationHeader) {
         const token: any = req.headers.authorization.split(' ')[1]; // Bearer <token>
-
+        //if no token is  provided return
         if (!token) return res.status(403).send({ status: "forbidden", code: 403, message: 'No token provided.' });
 
         jwt.verify(token, process.env.SECRET, function (err: any, decoded: any) {
@@ -34,6 +34,9 @@ function verifyToken(req: Request, res: Response, next: any): any {
             return;
 
         });
+    } else {
+        return res.status(403).send({ status: "forbidden", code: 403, message: 'No authorization provided.' });
+
     }
 
 }

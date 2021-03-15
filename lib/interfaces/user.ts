@@ -17,6 +17,6 @@ interface UserI extends mongoose.Document {
       
      roles: Array<string>,
 
-    createdAt: Date
+   
 }
 export { UserI }

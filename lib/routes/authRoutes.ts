@@ -22,6 +22,7 @@ export class Routes {
                     message: 'Hello,wellcome to Myyinvest tech interns auth API'
                 })
             });
+
         // user registration route
         app.route('/api/auth/register')
             .post(validateSignup, this.authController.register);
@@ -30,46 +31,48 @@ export class Routes {
         app.route('/api/auth/login')
             .post(validateLogin, this.authController.login);
 
+        //password reset request route
+        app.route('/api/auth/request-password-reset')
+            .post(this.userController.requestPasswordReset);
+
+        // paasword reset route
+        app.route('/api/auth/reset-password')
+            .post(this.userController.passwordReset);
+
         // get all users 
         app.route('/api/users/get')
             .get(this.userController.getAllUsers);
 
-    
+
 
         // get a user with the user's id
         app.route('/api/user/get/:userId')
-            .get(this.userController.getUserWithID)
-
+            .get(this.userController.getUserWithID);
 
         // get a user with the user's id
         app.route('/api/user/update')
             //only superAdmin user is allowed to update user details
             .put([verifyToken, isSuperAdmin], this.userController.updateUser)
-        
+
         // get a user with the user's id
         app.route('/api/user/delete/:userId')
             //only superAdmin user is allowed to remove user
-            .delete([verifyToken, isSuperAdmin], this.userController.deleteUser)
+            .delete([verifyToken, isSuperAdmin], this.userController.deleteUser);
 
         // soft delete a user with the user's id
         app.route('/api/user/softdelete/:userId')
             //only superAdmin user is allowed to soft delete users
-            .delete([verifyToken, isSuperAdmin], this.userController.softDeleteUser)
-        
+            .delete([verifyToken, isSuperAdmin], this.userController.softDeleteUser);
+
         // activate a user with the user's id
         app.route('/api/user/activate/:userId')
             //only superAdmin user is allowed to activate or deactivate users
-            .post([verifyToken, isSuperAdmin], this.userController.activateUser)
+            .put([verifyToken, isSuperAdmin], this.userController.activateUser);
 
-
-        //password reset routes
-        app.route('/api/auth/request-password-reset')
-            .post(this.userController.requestPasswordReset)
-
-
-        app.route('/api/auth/reset-password')
-            .post(this.userController.passwordReset)
+        //assign roles to user
+        app.route('/api/user/assign-role/:userId')
+            //only superAdmin user is allowed to assign roles to users
+            .put([verifyToken, isSuperAdmin], this.userController.assignRole);
 
     }
 }
-

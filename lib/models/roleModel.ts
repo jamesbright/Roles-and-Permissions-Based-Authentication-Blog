@@ -8,13 +8,8 @@ export const RoleSchema = new Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: "Permission"
         }
-    ],
-  createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
-    }
-});
+    ]
+
+},
+    { timestamps: true }
+);

@@ -57,51 +57,7 @@ class AuthController {
           return res.status(500).send({ status: "Server error", code: 500, message: err });
 
         } else {
-          //if we have an array of roles from endpoint
-          if (req.body.roles) {
-            try {
-              const userRoles: Array<string> = ['user', 'admin', 'superAdmin'];
-              for (let i = 0; i < req.body.roles.length; i++) {
-                //if roles sent from endpoint does not exist in collection return error
-                if (!userRoles.includes(req.body.roles[i])) {
-                  return res.status(400).send({ status: "bad request", code: 400, message: `Failed to assign role, Role ${req.body.roles[i]} does not exist or is not an array!` });
-                }
-            
-              }
-            } catch (err) {
-              console.log(err);
-            }
-            // find all roles from role collection that matches user roles from request
-            Role.find(
-              {
-                name: { $in: req.body.roles }
-              },
-              (err: any, roles: Record<string, unknown>) => {
-                if (err) {
-                  return res.status(500).send({ status: "Server error", code: 500, message: err });
-
-                }
-                if (roles == null) {
-                  return res.status(404).send({ status: "Not found", code: 404, message: "Roles not available" });
-
-                }
-                //assign all roles to user
-                Object.keys(roles).forEach((key: string) => {
-                  user.roles.push(roles[key]['_id'])
-                });
-                //save the result
-                user.save(err => {
-                  if (err) {
-                    return res.status(500).send({ status: "Server error", code: 500, message: err });
-                    
-                  }
-
-                  return res.status(201).send({ status: "Success", code: 201, message: 'Successfully registered' });
-                });
-              }
-            );
-          } else {
-            //if no roles was sent from endpoint then assign user role to the user
+           //assign 'user' role to the user
             Role.findOne({ name: "user" }, (err, role) => {
               if (err) {
                 return res.status(500).send({ status: "Server error", code: 500, message: err });
@@ -119,7 +75,7 @@ class AuthController {
 
               });
             });
-          }
+          
 
 
         }

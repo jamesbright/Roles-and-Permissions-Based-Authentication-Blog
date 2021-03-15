@@ -1,10 +1,12 @@
 import * as mongoose from 'mongoose';
 import { UserSchema } from '../models/userModel';
 import { TokenSchema } from '../models/tokenModel';
+import { RoleSchema } from '../models/roleModel';
 import { TrashSchema } from '../models/trashModel';
 import { Request, Response } from 'express';
 import { UserI } from '../interfaces/user';
 import { TokenI } from '../interfaces/token';
+import { RoleI } from '../interfaces/role';
 import { TrashI } from '../interfaces/trash';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
@@ -15,7 +17,12 @@ dotenv.config()
 
 //Create an instance of  user model
 const User = mongoose.model<UserI>('User', UserSchema);
+//index user documents to enable searching
 User.createIndexes()
+
+//Create an instance of role model
+const Role = mongoose.model<RoleI>('Role', RoleSchema);
+
 //Create an instance of token model
 const Token = mongoose.model<TokenI>('Token', TokenSchema);
 //Create an instance of trash model
@@ -23,6 +30,8 @@ const Trash = mongoose.model<TrashI>('Trash', TrashSchema);
 
 
 class UserController {
+
+
 
 
   public getAllUsers(req: Request, res: Response): void {
@@ -50,7 +59,7 @@ class UserController {
     try {
       //sort by firstname in ascending order
       const sort = { firstName: orderBy };
-      // execute query with page and limit values
+
       User.find(query, async function (err: any, users: any) {
         // get total documents in the User collection 
         const count: number = await User.countDocuments();
@@ -122,6 +131,105 @@ class UserController {
     }
   }
 
+  public assignRole(req: Request, res: Response): void {
+
+    let status: string,
+      message: any,
+      code: number;
+    //find user using their id
+    User.findById(req.params.userId, function (err, user) {
+      if (err) {
+        code = 500;
+        status = "Server error";
+        message = "There was a problem with the server.";
+        return res.status(code).send({ user: user, status: status, code: code, message: message });
+
+      } else {
+        if (!user) {
+          code = 404;
+          status = "Not found";
+          message = "User not found";
+          return res.status(code).send({ user: user, status: status, code: code, message: message });
+        } else {
+
+          if (req.body.roles) {
+            try {
+              const userRoles: Array<string> = ['user', 'admin', 'superAdmin'];
+              for (let i = 0; i < req.body.roles.length; i++) {
+                //if roles sent from endpoint does not exist in collection return error
+                if (!userRoles.includes(req.body.roles[i])) {
+                  return res.status(400).send({ status: "bad request", code: 400, message: `Role ${req.body.roles[i]} does not exist or Role is not an array!` });
+                }
+
+              }
+            } catch (err) {
+              console.log(err);
+            }
+            // find all roles from role collection that matches user roles from request
+            Role.find(
+              {
+                name: { $in: req.body.roles }
+              },
+              (err: any, roles: Record<string, unknown>) => {
+                if (err) {
+                  return res.status(500).send({ status: "Server error", code: 500, message: err });
+
+                }
+                if (roles == null) {
+                  return res.status(404).send({ status: "Not found", code: 404, message: "Roles not available" });
+
+                }
+  
+                const assignableRoles: string[] = [];
+               Object.keys(roles).forEach((key: string) => {
+                 assignableRoles.push(roles[key]['_id'])
+                });
+
+                 //find roles not yet assigned to user
+                let notAssigned : string[]= [];
+                notAssigned = assignableRoles.filter(element => !user.roles.includes(element))
+                
+
+                //if role is not yet assigned to user, then assign role.
+                if (notAssigned.length > 0) {
+                  notAssigned.forEach((role: string) => {
+                    user.roles.push(role);
+                  })
+                } else {
+                  return res.status(400).send({ status: "bad request", code: 400, message: "Roles already assigned to user" });
+
+                }
+
+                //save the result
+                user.save(err => {
+                  if (err) {
+                    return res.status(500).send({ status: "Server error", code: 500, message: err });
+
+                  }
+
+                  code = 200;
+                  status = "Success";
+                  message = "Successfully assigned roles to user";
+                  return res.status(code).send({ user: user, status: status, code: code, message: message });
+
+                });
+              }
+            );
+          } else {
+            // no roles was sent from endpoint
+            code = 400;
+            status = "bad request";
+            message = "no roles was provided.";
+            return res.status(code).send({ user: user, status: status, code: code, message: message });
+
+          }
+
+        }
+      }
+
+    }).select('-password'); //do not include password
+  }
+
   public getUserWithID(req: Request, res: Response): void {
 
     let status: string,
@@ -155,7 +263,7 @@ class UserController {
       message: any,
       code: number;
     //find user by their id and update the new values subsequently
-    User.findOneAndUpdate({ _id: req.body.userId }, req.body, { new: true }, function (err, user) {
+    User.findOneAndUpdate({ email: req.body.email }, req.body, { new: true }, function (err, user) {
       if (err) {
         code = 500;
         status = "Server error";
@@ -253,7 +361,7 @@ class UserController {
       code: number;
 
     //find user by their id and set active to true subsequently
-    User.findByIdAndUpdate({ _id: req.params.userId }, { active: req.body.active, updatedAt: Date.now() },
+    User.findByIdAndUpdate({ _id: req.params.userId }, { active: req.body.active },
       { new: true }, function (err, user) {
         if (err) {
           code = 500;
@@ -268,7 +376,10 @@ class UserController {
 
           code = 200;
           status = "Success";
-          message = "User activated successfully”";
+          if (req.body.active == true)
+            message = "User activated successfully";
+          else
+            message = "User deactivated successfully";
         }
 
 
@@ -321,13 +432,13 @@ class UserController {
 
       const clientURL: string = process.env.CLIENT_URL;//frontend domain name
       const userEmail: string = user.email; //user's email address to send email to
-      const link = `${clientURL}/passwordReset?token=${resetToken}&id=${user._id}`;// passwordReset endpoint
+      const link = `${clientURL}/passwordReset?token=${resetToken}&userId=${user._id}`;// passwordReset endpoint
 
       //message to be displayed to user
       const body = `<h1> <p>Hi ${user.firstName},</p>
         <p>You requested to reset your password.</p>
         <p> Please, click the link below to reset your password</p>
-        <a href=${link}">Reset Password</a>`;
+        <a href=${link}>Reset Password</a>`;
 
       console.log('sending mail');
       //send mail
@@ -342,8 +453,8 @@ class UserController {
             console.log('Done', result)
           })
           .catch((error) => {
-            code = 201;
-            status = "Failed";
+            code = 401;
+            status = "Forbidden";
             message = `Email not sent, please try again later`;
             console.error('Error: ', error)
           })
@@ -361,9 +472,9 @@ class UserController {
       message: any,
       code: number;
 
-    const userId: string = req.query.userId as string;
-    const token: string = req.query.token as string;
-    const password: string = req.query.password as string;
+    const userId: string = req.body.userId;
+    const token: string = req.body.token;
+    const password: string = req.body.password;
     //get user's password reset token 
     const passwordResetToken: TokenI = await Token.findOne({ userId: userId });
     if (!passwordResetToken) {
@@ -421,7 +532,6 @@ class UserController {
         message = 'password reset successful';
 
       }
-
       return res.status(code).send({ status: status, code: code, message: message });
 
     }
