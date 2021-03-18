@@ -111,8 +111,8 @@ class UserController {
         }
         //get current and next url
         const links: Record<string, unknown> = {
-          'nextLink': `${req.protocol}://${req.get('host')}?page=${nextPage}&limit=${limit}`,
-          'prevLink': `${req.protocol}://${req.get('host')}?page=${prevPage}&limit=${limit}`
+          'nextLink': `${req.protocol}://${req.get('host')}/api/users/get?page=${nextPage}&limit=${limit}`,
+          'prevLink': `${req.protocol}://${req.get('host')}/api/users/get?page=${prevPage}&limit=${limit}`
         };
         // return response with posts, calculated total pages, and current page
         return res.status(code).send({ users, pagination: pagination, status: status, code: code, message: message, links: links });
