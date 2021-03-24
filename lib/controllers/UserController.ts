@@ -44,6 +44,7 @@ class UserController {
     const currentPage: number = Number(req.query.page) || 1;
     const limit: number = Number(req.query.limit) || 5;
     const orderBy: number = Number(req.query.orderBy) || 1;
+    const sortBy: string = req.query.sortBy as string || 'firstName';
     let hasNext: boolean,
       hasPrev: boolean,
       query: object;
@@ -58,7 +59,7 @@ class UserController {
 
     try {
       //sort by firstname in ascending order
-      const sort = { firstName: orderBy };
+      const sort = { [sortBy]: orderBy };
 
       User.find(query, async function (err: any, users: any) {
         // get total documents in the User collection 
@@ -142,14 +143,14 @@ class UserController {
         code = 500;
         status = "Server error";
         message = "There was a problem with the server.";
-        return res.status(code).send({ user: user, status: status, code: code, message: message });
+        return res.status(code).send({ status: status, code: code, message: message });
 
       } else {
         if (!user) {
           code = 404;
           status = "Not found";
           message = "User not found";
-          return res.status(code).send({ user: user, status: status, code: code, message: message });
+          return res.status(code).send({ status: status, code: code, message: message });
         } else {
 
           if (req.body.roles) {
@@ -263,7 +264,7 @@ class UserController {
       message: any,
       code: number;
     //find user by their id and update the new values subsequently
-    User.findOneAndUpdate({ email: req.body.email }, req.body, { new: true }, function (err, user) {
+    User.findOneAndUpdate({ _id: req.params.userId }, req.body, { new: true }, function (err, user) {
       if (err) {
         code = 500;
         status = "Server error";

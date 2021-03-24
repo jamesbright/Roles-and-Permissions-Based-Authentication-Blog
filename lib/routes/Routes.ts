@@ -2,16 +2,20 @@ import * as express from 'express';
 import { Request, Response } from 'express';
 import { AuthController } from '../controllers/AuthController';
 import { UserController } from '../controllers/UserController';
+import { parser } from '../middlewares/fileUpload'
 import { verifyToken, isAdmin, isSuperAdmin } from '../middlewares/verifyAccess'
 import validateSignup from '../middlewares/validateSignup'
 import validateLogin from '../middlewares/validateLogin'
-
+import validateBlog from '../middlewares/validateBlog'
+import { BlogController } from '../controllers/BlogController';
 
 export class Routes {
     //create an instance of AuthController
     public authController: AuthController = new AuthController();
     //create an instance of UserController
     public userController: UserController = new UserController();
+    //create an instance of BlogController
+    public blogController: BlogController = new BlogController();
 
     public routes(app: express.Application): void {
 
@@ -50,7 +54,7 @@ export class Routes {
             .get(this.userController.getUserWithID);
 
         // get a user with the user's id
-        app.route('/api/user/update')
+        app.route('/api/user/update/:userId')
             //only superAdmin user is allowed to update user details
             .put([verifyToken, isSuperAdmin], this.userController.updateUser)
 
@@ -73,6 +77,42 @@ export class Routes {
         app.route('/api/user/assign-role/:userId')
             //only superAdmin user is allowed to assign roles to users
             .put([verifyToken, isSuperAdmin], this.userController.assignRole);
+
+        // blog routes
+        //create new blog
+        app.route('/api/blog/create')
+            .post([parser.single('image'), validateBlog], this.blogController.create);
+
+
+        //get all blogs
+        app.route('/api/blogs/get')
+            .get(this.blogController.getAllBlogs);
+
+
+        //get a blog
+        app.route('/api/blog/get/:id')
+            .get(this.blogController.getBlog);
+
+        //comment on a blog
+        app.route('/api/blog/comment/:id')
+            .put(this.blogController.addComment);
+
+        //user viewed a blog
+        app.route('/api/blog/view/:id')
+            .put(this.blogController.incViews);
+
+        //like a blog
+        app.route('/api/blog/like/:id')
+            .put(this.blogController.addLike);
+
+        //update a blog
+        app.route('/api/blog/update/:id')
+            .put([verifyToken, isAdmin, parser.single('image'), validateBlog], this.blogController.updateBlog);
+
+
+        //delete a blog
+        app.route('/api/blog/delete/:id')
+            .delete([verifyToken, isAdmin], this.blogController.deleteBlog);
 
     }
 }

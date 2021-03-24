@@ -25,7 +25,8 @@ export const UserSchema = new Schema({
     },
     password: {
         type: String,
-        required: true
+        required: true,
+        select:false
     },
     reset_password_token: {
         type: String

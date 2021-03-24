@@ -1,7 +1,8 @@
 import * as express from "express";
 import * as bodyParser from "body-parser";
 import * as  cors from "cors";
-import { Routes } from "./routes/authRoutes";
+import { Routes } from "./routes/Routes";
+
 import * as mongoose from "mongoose";
 import { RoleSchema } from "./models/roleModel";
 import { PermissionSchema } from "./models/permissionModel";
@@ -39,6 +40,7 @@ class App {
 
         // support application/json type post data
         this.app.use(bodyParser.json());
+        this.app.use(bodyParser.raw());
         //support application/x-www-form-urlencoded post data
         this.app.use(bodyParser.urlencoded({ extended: false }));
 
