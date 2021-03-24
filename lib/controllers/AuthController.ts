@@ -26,7 +26,7 @@ class AuthController {
 
     try {
       //check if already registered
-      const user : UserI = await User.findOne({ email: req.body.email }, function (err:any) {
+      const user: UserI = await User.findOne({ email: req.body.email }, function (err: any) {
         if (err) {
           return res.status(500).send({ status: "Server error", code: 500, message: err });
         }
@@ -40,7 +40,7 @@ class AuthController {
     }
 
     // encrypt password
-    const hashedPassword : string = bcrypt.hashSync(req.body.password, Number(process.env.BCRYPT_SALT));
+    const hashedPassword: string = bcrypt.hashSync(req.body.password, Number(process.env.BCRYPT_SALT));
 
     //create new user
     User.create({
@@ -50,32 +50,32 @@ class AuthController {
       email: req.body.email,
       password: hashedPassword,
       active: true,
-      createdAt:Date.now()
+      createdAt: Date.now()
     },
       (err, user) => {
         if (err) {
           return res.status(500).send({ status: "Server error", code: 500, message: err });
 
         } else {
-           //assign 'user' role to the user
-            Role.findOne({ name: "user" }, (err, role) => {
+          //assign 'user' role to the user
+          Role.findOne({ name: "user" }, (err, role) => {
+            if (err) {
+              return res.status(500).send({ status: "Server error", code: 500, message: err });
+
+            }
+            // assign role to user 
+            user.roles = [role._id];
+            user.save(err => {
               if (err) {
                 return res.status(500).send({ status: "Server error", code: 500, message: err });
-              
+
               }
-              // assign role to user 
-              user.roles = [role._id];
-              user.save(err => {
-                if (err) {
-                  return res.status(500).send({ status: "Server error", code: 500, message: err });
-                  
-                }
 
-                return res.status(201).send({ status: "Success", code: 201, message: 'Successfully registered' });
+              return res.status(201).send({ status: "Success", code: 201, message: 'Successfully registered' });
 
-              });
             });
-          
+          });
+
 
 
         }
@@ -90,7 +90,7 @@ class AuthController {
   public login(req: Request, res: Response): void {
 
     //get the user using their email
-    User.findOne({ email: req.body.email }, function (err:any, user:UserI) {
+    User.findOne({ email: req.body.email }, function (err: any, user: UserI) {
       if (err) return res.status(500).send({ status: "Server error", code: 500, message: err });
       //if user do not exist return not found
       if (!user) return res.status(404).send({ status: 'Not found', code: 404, message: 'User does not exist.' });

@@ -180,16 +180,16 @@ class UserController {
                   return res.status(404).send({ status: "Not found", code: 404, message: "Roles not available" });
 
                 }
-  
+
                 const assignableRoles: string[] = [];
-               Object.keys(roles).forEach((key: string) => {
-                 assignableRoles.push(roles[key]['_id'])
+                Object.keys(roles).forEach((key: string) => {
+                  assignableRoles.push(roles[key]['_id'])
                 });
 
-                 //find roles not yet assigned to user
-                let notAssigned : string[]= [];
+                //find roles not yet assigned to user
+                let notAssigned: string[] = [];
                 notAssigned = assignableRoles.filter(element => !user.roles.includes(element))
-                
+
 
                 //if role is not yet assigned to user, then assign role.
                 if (notAssigned.length > 0) {
