@@ -45,6 +45,7 @@
     "@types/express": "^4.17.11",
     "@types/express-validator": "^3.0.0",
     "@types/jsonwebtoken": "^8.5.0",
+    "@types/multer": "^1.4.5",
     "@types/node": "^14.14.27",
     "@typescript-eslint/eslint-plugin": "^4.15.0",
     "@typescript-eslint/parser": "^4.15.0",
