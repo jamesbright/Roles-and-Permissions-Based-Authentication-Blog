@@ -2,6 +2,8 @@ import * as mongoose from 'mongoose';
 import { Request, Response } from 'express';
 import { BlogSchema } from '../models/blogModel';
 import { Comment } from '../models/commentModel';
+import { UserSchema } from '../models/userModel';
+import { UserI } from '../interfaces/user';
 import { BlogI } from '../interfaces/blog';
 
 const cloudinary = require('cloudinary').v2;
@@ -9,16 +11,26 @@ import { Like } from '../models/likeModel';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
+
+
 //Create an instance of  blog model
 const Blog = mongoose.model<BlogI>('Blog', BlogSchema);
 //index blog documents to enable searching
 Blog.createIndexes()
 
+
+//Create an instance of  user model
+const User = mongoose.model<UserI>('User', UserSchema);
+//index user documents to enable searching
+User.createIndexes()
+
 class BlogController {
 
 
     public create(req: Request, res: Response): void {
-
+        let status: string,
+            message: any,
+            code: number;
         console.log(req['file']);
         //create new blog
         let imageURL: string, imageId: string;
@@ -29,6 +41,25 @@ class BlogController {
             imageURL = null;
             imageId = null;
         }
+        User.findById(req.body.author, function (err, user) {
+            if (err) {
+                code = 500;
+                status = "Server error";
+                message = "There was a problem with the server";
+                return res.status(code).send({ status: status, code: code, message: message });
+
+
+            } else {
+                if (!user) {
+
+                    code = 404;
+                    status = "not found";
+                    message = "author not found";
+                    return res.status(code).send({ status: status, code: code, message: message });
+
+
+                }
+         
         Blog.create({
             title: req.body.title,
             content: req.body.content,
@@ -55,6 +86,9 @@ class BlogController {
 
                 }
             });
+    }
+
+});
     }
 
     public getAllBlogs(req: Request, res: Response): void {
@@ -208,6 +242,16 @@ class BlogController {
                 return res.status(code).send({ status: status, code: code, message: message });
 
             } else {
+                User.findById(req.body.author, function (err, user) {
+                    if (err) {
+                        return res.status(500).send({ status: "Server error", code: 500, message: "There was a problem with the server" });
+
+                    } else {
+                        if (!user) {
+                            return res.status(404).send({ status: "not found", code: 404, message: "author not found" });
+
+                        }
+                 
 
                 cloudinary.config({
                     cloud_name: process.env.CLOUDINARY_NAME,
@@ -224,6 +268,7 @@ class BlogController {
                         imageURL = null;
                         imageId = null;
                     }
+
                     blog.title = req.body.title,
                         blog.content = req.body.content,
                         blog.imageURL = imageURL,
@@ -239,6 +284,9 @@ class BlogController {
                             return res.status(code).send({ blog: blog, status: status, code: code, message: message });
                         })
                 })
+
+                    }
+                });
             }
 
         })
@@ -249,7 +297,16 @@ class BlogController {
         let status: string,
             message: any,
             code: number;
+        User.findById(req.body.userId, function (err, user) {
+            if (err) {
+                return res.status(500).send({ status: "Server error", code: 500, message: "There was a problem with the server" });
 
+            } else {
+                if (!user) {
+                    return res.status(404).send({ status: "not found", code: 404, message: "User not found" });
+
+                }
+        
         //create new comment
         Comment.create({
             content: req.body.content,
@@ -297,6 +354,8 @@ class BlogController {
                     })
                 }
             })
+            }
+        });
     }
 
 
@@ -305,7 +364,16 @@ class BlogController {
         let status: string,
             message: any,
             code: number;
+        User.findById(req.body.userId, function (err, user) {
+            if (err) {
+                return res.status(500).send({ status: "Server error", code: 500, message: "There was a problem with the server" });
 
+            } else {
+                if (!user) {
+                    return res.status(404).send({ status: "not found", code: 404, message: "User not found" });
+
+                }
+         
         //create new comment
         Like.create({
             user: req.body.userId
@@ -350,6 +418,8 @@ class BlogController {
                     })
                 }
             })
+            }
+        });
     }
 
 

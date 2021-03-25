@@ -17,12 +17,10 @@ export const BlogSchema = new Schema({
     },
     imageURL: {
         type: String,
-        required: true
 
     },
     imageId: {
         type: String,
-        required: true
     },
     author:
     {
