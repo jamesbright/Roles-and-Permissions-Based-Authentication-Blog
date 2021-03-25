@@ -24,13 +24,13 @@ export const BlogSchema = new Schema({
         type: String,
         required: true
     },
-    author: 
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
-            required:true
-        },
-    
+    author:
+    {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
+
 
     comments: [
         {
@@ -53,10 +53,12 @@ export const BlogSchema = new Schema({
     views:
     {
         type: Number,
-        default :0
-        
+        default: 0
+
     }
 
 }, { timestamps: true });
 
+
+BlogSchema.index({ title: 'text', content: 'text', createdAt: 'text', });
 

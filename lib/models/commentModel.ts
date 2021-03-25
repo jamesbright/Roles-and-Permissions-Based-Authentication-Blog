@@ -16,7 +16,7 @@ const CommentSchema = new Schema({
     { timestamps: true }
 );
 
-
+CommentSchema.index({ content: 'text', createdAt: 'text', });
 //Create an instance of  comment model
 const Comment = mongoose.model<CommentI>('Comment', CommentSchema);
 //index comment documents to enable searching

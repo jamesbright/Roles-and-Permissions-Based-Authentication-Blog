@@ -92,7 +92,7 @@ class BlogController {
                 if (err) {
                     code = 500;
                     status = "Server error";
-                    message = "There was a problem with the server.";
+                    message = err;
                     totalPages = 0;
                 } else {
                     if (blogs.length == 0) {

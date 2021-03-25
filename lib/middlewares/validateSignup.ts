@@ -27,7 +27,7 @@ export default function validateSignup(req: Request, res: Response, next:any): a
 
   //if there are errors return an error message
   if (!valid) {
-    return res.status(400).send({ status: 'invalid request', code: 422, message: error });
+    return res.status(422).send({ status: 'invalid request', code: 422, message: error });
 
   } else {
 
