@@ -255,7 +255,8 @@ class UserController {
       }
       return res.status(code).send({ user: user, status: status, code: code, message: message });
 
-    }).select('-password'); //do not include password
+    }).populate("roles", "-__v")
+      .select('-password'); //do not include password
   }
 
   public updateUser(req: Request, res: Response): void {
