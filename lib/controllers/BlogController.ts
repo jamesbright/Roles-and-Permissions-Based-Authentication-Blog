@@ -41,6 +41,7 @@ class BlogController {
             imageURL = null;
             imageId = null;
         }
+        console.log(req.body.author);
         User.findById(req.body.author, function (err, user) {
             if (err) {
                 code = 500;
@@ -59,38 +60,62 @@ class BlogController {
 
 
                 }
-         
-        Blog.create({
-            title: req.body.title,
-            content: req.body.content,
-            imageURL: imageURL,
-            imageId: imageId,
-            author: req.body.author,
-        },
-            (err, blog) => {
-                if (err) {
-                    return res.status(500).send({ status: "Server error", code: 500, message: err });
 
-                } else {
-                    //upload image to cloudinary
-
-                    blog.save(err => {
+                Blog.create({
+                    title: req.body.title,
+                    content: req.body.content,
+                    imageURL: imageURL,
+                    imageId: imageId,
+                    author: req.body.author,
+                },
+                    (err, blog) => {
                         if (err) {
                             return res.status(500).send({ status: "Server error", code: 500, message: err });
 
+                        } else {
+                            //upload image to cloudinary
+
+                            blog.save(err => {
+                                if (err) {
+                                    return res.status(500).send({ status: "Server error", code: 500, message: err });
+
+                                }
+
+                                return res.status(201).send({ blog: blog, status: "Success", code: 201, message: 'blog successfully published' });
+
+                            });
+
                         }
-
-                        return res.status(201).send({ blog: blog, status: "Success", code: 201, message: 'blog successfully published' });
-
                     });
+            }
 
-                }
-            });
+        });
     }
 
-});
-    }
+    public ckUpload(req: Request, res: Response): any {
+        let status: string,
+            message: any,
+            code: number;
+        console.log(req['file']);
+      
+        let url: string, imageId: string;
+        if (req['file']) {
+            url = req['file'].path;
+            imageId = req['file'].filename;
 
+            code = 200;
+            status = "Success";
+            message = "Endpoint returned successfully";
+            return res.status(code).send({ url:url,imageId:imageId, status: status, code: code, message: message});
+
+        } else {
+            code = 500;
+            status = "error";
+            message = "error while uploading image";
+            return res.status(code).send({ url: req['file'], status: status, code: code, error:{ message: message} });
+
+        }
+    }
     public getAllBlogs(req: Request, res: Response): void {
 
         let status: string,
@@ -99,7 +124,7 @@ class BlogController {
 
         // get limit and page number from request
         const currentPage: number = Number(req.query.page) || 1;
-        const limit: number = Number(req.query.limit) || 5;
+        const limit: number = Number(req.query.limit) || 10;
         const orderBy: number = Number(req.query.orderBy) || 1;
         const sortBy: string = req.query.sortBy as string || 'createdAt';
 
@@ -120,6 +145,7 @@ class BlogController {
             const sort = { [sortBy]: orderBy };
 
             Blog.find(query, async function (err: any, blogs: any) {
+               
                 // get total documents in the User collection 
                 const count: number = await Blog.countDocuments();
                 let totalPages: number;
@@ -137,7 +163,7 @@ class BlogController {
                     } else {
                         code = 200;
                         status = "Success";
-                        message = "Endpoint returned successfully”";
+                        message = "Endpoint returned successfully";
                         totalPages = Math.ceil(count / limit);
 
                     }
@@ -213,10 +239,15 @@ class BlogController {
                     message = "Endpoint returned successfully”";
                 }
             }
-            return res.status(code).send({ blog: blog, status: status, code: code, message: message });
+            //get all comments and likes for this blog
+            Comment.find({ blog: req.params.id }, function (err, comments) {
+                Like.find({ blog: req.params.id }, function (err, likes) {
+                    return res.status(code).send({ blog: blog, comments: comments, likes: likes, status: status, code: code, message: message });
+                }).populate('user');
+            }).populate('user');
 
         }).populate({ path: "author", select: '-password' }) // populate blogs
-            .populate("comments")// in blogs, populate comments
+            .select("-comments")// in blogs, populate comments
             .populate("likes")// in blogs, populate likes
     }
 
@@ -251,39 +282,39 @@ class BlogController {
                             return res.status(404).send({ status: "not found", code: 404, message: "author not found" });
 
                         }
-                 
 
-                cloudinary.config({
-                    cloud_name: process.env.CLOUDINARY_NAME,
-                    api_key: process.env.CLOUDINARY_API_KEY,
-                    api_secret: process.env.CLOUDINARY_API_SECRET,
-                });
-                cloudinary.uploader.destroy(blog.imageId, function (result) {
-                    console.log(result)
-                    let imageURL: string, imageId: string;
-                    if (req['file']) {
-                        imageURL = req['file'].path;
-                        imageId = req['file'].filename;
-                    } else {
-                        imageURL = null;
-                        imageId = null;
-                    }
 
-                    blog.title = req.body.title,
-                        blog.content = req.body.content,
-                        blog.imageURL = imageURL,
-                        blog.imageId = imageId,
-                        blog.author = req.body.author,
-                        blog.save(err => {
-                            if (err) {
-                                return res.status(500).send({ status: "Server error", code: 500, message: err });
+                        cloudinary.config({
+                            cloud_name: process.env.CLOUDINARY_NAME,
+                            api_key: process.env.CLOUDINARY_API_KEY,
+                            api_secret: process.env.CLOUDINARY_API_SECRET,
+                        });
+                        cloudinary.uploader.destroy(blog.imageId, function (result) {
+                            console.log(result)
+                            let imageURL: string, imageId: string;
+                            if (req['file']) {
+                                imageURL = req['file'].path;
+                                imageId = req['file'].filename;
+                            } else {
+                                imageURL = null;
+                                imageId = null;
                             }
-                            code = 200;
-                            status = "Success";
-                            message = "Blog updated successfully";
-                            return res.status(code).send({ blog: blog, status: status, code: code, message: message });
+
+                            blog.title = req.body.title,
+                                blog.content = req.body.content,
+                                blog.imageURL = imageURL,
+                                blog.imageId = imageId,
+                                blog.author = req.body.author,
+                                blog.save(err => {
+                                    if (err) {
+                                        return res.status(500).send({ status: "Server error", code: 500, message: err });
+                                    }
+                                    code = 200;
+                                    status = "Success";
+                                    message = "Blog updated successfully";
+                                    return res.status(code).send({ blog: blog, status: status, code: code, message: message });
+                                })
                         })
-                })
 
                     }
                 });
@@ -306,54 +337,57 @@ class BlogController {
                     return res.status(404).send({ status: "not found", code: 404, message: "User not found" });
 
                 }
-        
-        //create new comment
-        Comment.create({
-            content: req.body.content,
-            user: req.body.userId
-        },
-            (err, comment) => {
-                if (err) {
-                    return res.status(500).send({ status: "Server error", code: 500, message: err });
 
-                } else {
-
-                    comment.save(err => {
+                //create new comment
+                Comment.create({
+                    content: req.body.content,
+                    user: req.body.userId,
+                    blog: req.params.id,
+                },
+                    (err, comment) => {
                         if (err) {
                             return res.status(500).send({ status: "Server error", code: 500, message: err });
 
-                        }
-                        Comment.populate(comment, { path: "user" });
+                        } else {
 
-                        Blog.findById(req.params.id, function (err, blog) {
-                            if (err) {
-                                code = 500;
-                                status = "Server error";
-                                message = "There was a problem with the server.";
-                                return res.status(code).send({ status: status, code: code, message: message });
+                            comment.save(err => {
+                                if (err) {
+                                    return res.status(500).send({ status: "Server error", code: 500, message: err });
 
-                            } else {
-                                if (!blog) {
-                                    code = 404;
-                                    status = "Not found";
-                                    message = "Blog not found";
-                                    return res.status(code).send({ status: status, code: code, message: message });
-                                } else {
-                                    blog.comments.push(comment._id);
-                                    blog.save(err => {
-                                        if (err) {
-                                            return res.status(500).send({ status: "Server error", code: 500, message: err });
-
-                                        }
-
-                                        return res.status(201).send({ status: "Success", code: 201, message: 'Successfully commented' });
-                                    });
                                 }
-                            }
-                        });
+                                Comment.populate(comment, { path: "user" });
+
+                                Blog.findById(req.params.id, function (err, blog) {
+                                    if (err) {
+                                        code = 500;
+                                        status = "Server error";
+                                        message = "There was a problem with the server.";
+                                        return res.status(code).send({ status: status, code: code, message: message });
+
+                                    } else {
+                                        if (!blog) {
+                                            code = 404;
+                                            status = "Not found";
+                                            message = "Blog not found";
+                                            return res.status(code).send({ status: status, code: code, message: message });
+                                        } else {
+                                            blog.comments.push(comment._id);
+                                            blog.save(err => {
+                                                if (err) {
+                                                    return res.status(500).send({ status: "Server error", code: 500, message: err });
+
+                                                }
+
+                                                Comment.find({ blog: req.params.id }, function (err, comments) {
+                                                    return res.status(201).send({ comments: comments, status: "Success", code: 201, message: 'Successfully commented' });
+                                                }).populate('user');
+                                            });
+                                        }
+                                    }
+                                });
+                            })
+                        }
                     })
-                }
-            })
             }
         });
     }
@@ -373,51 +407,77 @@ class BlogController {
                     return res.status(404).send({ status: "not found", code: 404, message: "User not found" });
 
                 }
-         
-        //create new comment
-        Like.create({
-            user: req.body.userId
-        },
-            (err, like) => {
-                if (err) {
-                    return res.status(500).send({ status: "Server error", code: 500, message: err });
+                Like.findOne({}, function (err, like) {
+                    if (err) {
+                        return res.status(500).send({ status: "Server error", code: 500, message: "There was a problem with the server" });
 
-                } else {
+                    } else {
+                        if (like) {
+                            Like.remove({ _id: like._id }, function () {
 
-                    like.save(err => {
-                        if (err) {
-                            return res.status(500).send({ status: "Server error", code: 500, message: err });
+                                Like.find({ blog: req.params.id }, function (err, likes) {
 
+                                    return res.status(200).send({ likes: likes, liked: false, status: "Success", code: 200, message: 'unliked' });
+
+                                }).populate('user');
+                            })
+                        } else {
+
+                            //create new comment
+                            Like.create({
+                                user: req.body.userId,
+                                blog: req.params.id,
+                            },
+                                (err, like) => {
+                                    if (err) {
+                                        return res.status(500).send({ status: "Server error", code: 500, message: err });
+
+                                    } else {
+
+                                        like.save(err => {
+                                            if (err) {
+                                                return res.status(500).send({ status: "Server error", code: 500, message: err });
+
+                                            }
+                                            Blog.findById(req.params.id, function (err, blog) {
+                                                if (err) {
+                                                    code = 500;
+                                                    status = "Server error";
+                                                    message = "There was a problem with the server.";
+                                                    return res.status(code).send({ status: status, code: code, message: message });
+
+                                                } else {
+                                                    if (!blog) {
+                                                        code = 404;
+                                                        status = "Not found";
+                                                        message = "Blog not found";
+                                                        return res.status(code).send({ status: status, code: code, message: message });
+                                                    } else {
+                                                        blog.likes.push(like._id);
+                                                        blog.save(err => {
+                                                            if (err) {
+                                                                return res.status(500).send({ status: "Server error", code: 500, message: err });
+
+                                                            }
+
+                                                            Like.find({ blog: req.params.id }, function (err, likes) {
+                                                                return res.status(200).send({ likes: likes, liked: true, status: "Success", code: 200, message: 'liked' });
+
+                                                            }).populate('user');
+                                                        });
+                                                    }
+                                                }
+                                            });
+                                        })
+                                    }
+                                })
                         }
-                        Blog.findById(req.params.id, function (err, blog) {
-                            if (err) {
-                                code = 500;
-                                status = "Server error";
-                                message = "There was a problem with the server.";
-                                return res.status(code).send({ status: status, code: code, message: message });
 
-                            } else {
-                                if (!blog) {
-                                    code = 404;
-                                    status = "Not found";
-                                    message = "Blog not found";
-                                    return res.status(code).send({ status: status, code: code, message: message });
-                                } else {
-                                    blog.likes.push(like._id);
-                                    blog.save(err => {
-                                        if (err) {
-                                            return res.status(500).send({ status: "Server error", code: 500, message: err });
+                    }
+                }).where('user').equals(req.body.userId)
+                    .where('blog').equals(req.params.id);
 
-                                        }
 
-                                        return res.status(201).send({ status: "Success", code: 201, message: 'Successfully liked' });
-                                    });
-                                }
-                            }
-                        });
-                    })
-                }
-            })
             }
         });
     }

@@ -5,11 +5,11 @@ export default function validateBlog(req: Request, res: Response, next: any): an
 
     //destructure request and store it in body variable
     const { body } = req;
- 
+
 
     //define validation rules for regitration
     const BlogSchema = Joi.object().keys({
-        title:Joi.string().required(),
+        title: Joi.string().required(),
         content: Joi.string().required(),
         author: Joi.string().required(),
         image: Joi.any()

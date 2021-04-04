@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { AuthController } from '../controllers/AuthController';
 import { UserController } from '../controllers/UserController';
 import { parser } from '../middlewares/fileUpload'
+import { imageParser } from '../middlewares/ckUpload'
 import { verifyToken, isAdmin, isSuperAdmin } from '../middlewares/verifyAccess'
 import validateSignup from '../middlewares/validateSignup'
 import validateLogin from '../middlewares/validateLogin'
@@ -47,8 +48,6 @@ export class Routes {
         app.route('/api/users/get')
             .get(this.userController.getAllUsers);
 
-
-
         // get a user with the user's id
         app.route('/api/user/get/:userId')
             .get(this.userController.getUserWithID);
@@ -57,6 +56,7 @@ export class Routes {
         app.route('/api/user/update/:userId')
             //only superAdmin user is allowed to update user details
             .put([verifyToken, isSuperAdmin], this.userController.updateUser)
+
 
         // get a user with the user's id
         app.route('/api/user/delete/:userId')
@@ -73,16 +73,29 @@ export class Routes {
             //only superAdmin user is allowed to activate or deactivate users
             .put([verifyToken, isSuperAdmin], this.userController.activateUser);
 
+
+
+        // get all roles
+        app.route('/api/roles/get')
+            .get([verifyToken, isSuperAdmin],this.userController.getAllRoles);
+        
         //assign roles to user
         app.route('/api/user/assign-role/:userId')
             //only superAdmin user is allowed to assign roles to users
             .put([verifyToken, isSuperAdmin], this.userController.assignRole);
+
+        //unassign roles to user
+        app.route('/api/user/unassign-role/:userId')
+            //only superAdmin user is allowed to assign roles to users
+            .put([verifyToken, isSuperAdmin], this.userController.unAssignRole);
 
         // blog routes
         //create new blog
         app.route('/api/blog/create')
             .post([parser.single('image'), validateBlog], this.blogController.create);
 
+        app.route('/api/image/upload')
+            .post(imageParser.single('image'), this.blogController.ckUpload);
 
         //get all blogs
         app.route('/api/blogs/get')

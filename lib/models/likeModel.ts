@@ -8,8 +8,13 @@ const LikeSchema = new Schema({
             type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required:true
-        }
-    
+        },
+    blog:
+    {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Blog",
+        required: true
+    }
 
 
 },

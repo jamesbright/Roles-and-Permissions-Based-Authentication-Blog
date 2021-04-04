@@ -132,6 +132,47 @@ class UserController {
     }
   }
 
+  public getAllRoles(req: Request, res: Response): void {
+
+    let status: string,
+      message: string,
+      code: number;
+
+    try {
+  
+      Role.find({}, async function (err: any, roles: any) {
+        // get total documents in the User collection 
+  
+        if (err) {
+          code = 500;
+          status = "Server error";
+          message = "There was a problem with the server.";
+        
+        } else {
+          if (roles.length == 0) {
+            code = 404;
+            status = "Not found";
+            message = "Roles not found";
+           
+          } else {
+            code = 200;
+            status = "Success";
+            message = "Endpoint returned successfully”";
+          }
+        }
+
+        // return response with posts, calculated total pages, and current page
+        return res.status(code).send({ roles:roles, status: status, code: code, message: message });
+      }).populate("permissions", "-__v")
+        .exec();
+
+    } catch (err) {
+      console.error(err.message);
+    }
+  }
+
+
+
   public assignRole(req: Request, res: Response): void {
 
     let status: string,
@@ -231,6 +272,96 @@ class UserController {
     }).select('-password'); //do not include password
   }
 
+
+
+  public unAssignRole(req: Request, res: Response): void {
+
+    let status: string,
+      message: any,
+      code: number;
+    //find user using their id
+    User.findById(req.params.userId, function (err, user) {
+      if (err) {
+        code = 500;
+        status = "Server error";
+        message = "There was a problem with the server.";
+        return res.status(code).send({ status: status, code: code, message: message });
+
+      } else {
+        if (!user) {
+          code = 404;
+          status = "Not found";
+          message = "User not found";
+          return res.status(code).send({ status: status, code: code, message: message });
+        } else {
+
+          if (req.body.roles) {
+            try {
+              const userRoles: Array<string> = ['user', 'admin', 'superAdmin'];
+              for (let i = 0; i < req.body.roles.length; i++) {
+                //if roles sent from endpoint does not exist in collection return error
+                if (!userRoles.includes(req.body.roles[i])) {
+                  return res.status(400).send({ status: "bad request", code: 400, message: `Role ${req.body.roles[i]} does not exist or Role is not an array!` });
+                }
+
+              }
+            } catch (err) {
+              console.log(err);
+            }
+            // find all roles from role collection that matches user roles from request
+            Role.find(
+              {
+                name: { $in: req.body.roles }
+              },
+              (err: any, roles: Record<string, unknown>) => {
+                if (err) {
+                  return res.status(500).send({ status: "Server error", code: 500, message: err });
+
+                }
+                if (roles == null) {
+                  return res.status(404).send({ status: "Not found", code: 404, message: "Roles not available" });
+
+                }
+
+          
+                    user.roles.removeAll(roles);
+               
+               
+                //save the result
+                user.save(err => {
+                  if (err) {
+                    return res.status(500).send({ status: "Server error", code: 500, message: err });
+
+                  }
+                  User.find(function (err: any, users: any) {
+                    if (err) {
+                      return res.status(500).send({ status: "Server error", code: 500, message: err });
+                    }
+                    code = 200;
+                    status = "Success";
+                    message = "User roles successfully removed";
+                    return res.status(code).send({ users: users, status: status, code: code, message: message });
+                  });
+                
+                });
+              }
+            );
+          } else {
+            // no roles was sent from endpoint
+            code = 400;
+            status = "bad request";
+            message = "no roles was provided.";
+            return res.status(code).send({ user: user, status: status, code: code, message: message });
+
+          }
+
+        }
+      }
+
+    }).select('-password'); //do not include password
+  }
+
+
   public getUserWithID(req: Request, res: Response): void {
 
     let status: string,
@@ -317,9 +448,7 @@ class UserController {
         }
       }
 
-
       return res.status(code).send({ status: status, code: code, message: message });
-
     });
 
   }
@@ -343,7 +472,7 @@ class UserController {
         message = "User not found";
       } else {
 
-        code = 204;
+        code = 200;
         status = "Success";
         message = "User removed successfully”";
       }
@@ -356,14 +485,15 @@ class UserController {
 
   }
 
-  public activateUser(req: Request, res: Response): void {
+  public async activateUser(req: Request, res: Response): Promise<any> {
 
     let status: string,
       message: any,
       code: number;
-
     //find user by their id and set active to true subsequently
-    User.findByIdAndUpdate({ _id: req.params.userId }, { active: req.body.active },
+   const user = await User.findById({ _id: req.params.userId });
+    //find user by their id and set active to true subsequently
+    User.findByIdAndUpdate({ _id: req.params.userId }, { active: !user.active },
       { new: true }, function (err, user) {
         if (err) {
           code = 500;
@@ -378,7 +508,7 @@ class UserController {
 
           code = 200;
           status = "Success";
-          if (req.body.active == true)
+          if (user.active == true)
             message = "User activated successfully";
           else
             message = "User deactivated successfully";
@@ -434,7 +564,7 @@ class UserController {
 
       const clientURL: string = process.env.CLIENT_URL;//frontend domain name
       const userEmail: string = user.email; //user's email address to send email to
-      const link = `${clientURL}/passwordReset?token=${resetToken}&userId=${user._id}`;// passwordReset endpoint
+      const link = `${clientURL}/reset-password?token=${resetToken}&userId=${user._id}`;// passwordReset endpoint
 
       //message to be displayed to user
       const body = `<h1> <p>Hi ${user.firstName},</p>
@@ -479,6 +609,8 @@ class UserController {
     const password: string = req.body.password;
     //get user's password reset token 
     const passwordResetToken: TokenI = await Token.findOne({ userId: userId });
+
+    console.log("token", passwordResetToken);
     if (!passwordResetToken) {
       code = 404;
       status = "Not found";
@@ -490,10 +622,15 @@ class UserController {
 
       //check if reset token is valid
       const isValidToken: boolean = await bcrypt.compare(token, passwordResetToken.token);
+      
       if (!isValidToken) {
+
+        console.log(token, passwordResetToken.token);
         code = 400;
         status = "bad request";
         message = "Password token is not valid";
+        return res.status(code).send({ status: status, code: code, message: message });
+
       } else {
         //hash new user password
         const hashedPassword: string = bcrypt.hashSync(password, Number(process.env.BCRYPT_SALT));
