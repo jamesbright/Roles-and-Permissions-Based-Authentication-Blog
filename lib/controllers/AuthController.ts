@@ -1,12 +1,14 @@
 import * as mongoose from 'mongoose';
 import { UserSchema } from '../models/userModel';
 import { RoleSchema } from '../models/roleModel';
+import { LogSchema } from '../models/logModel';
 import { Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcryptjs';
 import * as dotenv from 'dotenv';
 import { UserI } from '../interfaces/user';
 import { RoleI } from '../interfaces/role';
+import { LogI } from '../interfaces/log';
 // initialize configuration
 dotenv.config()
 
@@ -16,6 +18,8 @@ const User = mongoose.model<UserI>('User', UserSchema);
 //Create an instance of the role model
 const Role = mongoose.model<RoleI>('Role', RoleSchema);
 
+//Create an instance of the log model
+const Log = mongoose.model<LogI>('Log', LogSchema);
 
 
 class AuthController {
@@ -70,7 +74,13 @@ class AuthController {
                 return res.status(500).send({ status: "Server error", code: 500, message: err });
 
               }
-
+              Log.create({
+                name: 'Registration',
+                user: user._id,
+                description: 'successfully registered'
+              }, (err, log) => {
+                log.save();
+              });
               return res.status(201).send({ status: "Success", code: 201, message: 'Successfully registered' });
 
             });
@@ -103,7 +113,13 @@ class AuthController {
       const token: string = jwt.sign({ id: user._id, email: user.email }, process.env.SECRET, {
         expiresIn: 86400 // expires in 24 hours
       });
-
+      Log.create({
+        name: 'Login',
+        user: user._id,
+        description: 'successfully logged in'
+      }, (err, log) => {
+        log.save();
+      });
       return res.status(200).send({ auth: true, token: token, _id: user._id, status: 'Success', code: 200, message: 'Successfully logged in' });
     })
   }

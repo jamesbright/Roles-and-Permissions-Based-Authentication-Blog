@@ -73,8 +73,6 @@ export class Routes {
             //only superAdmin user is allowed to activate or deactivate users
             .put([verifyToken, isSuperAdmin], this.userController.activateUser);
 
-
-
         // get all roles
         app.route('/api/roles/get')
             .get([verifyToken, isSuperAdmin],this.userController.getAllRoles);
@@ -126,6 +124,17 @@ export class Routes {
         //delete a blog
         app.route('/api/blog/delete/:id')
             .delete([verifyToken, isAdmin], this.blogController.deleteBlog);
+
+        
+          //get all logs
+        app.route('/api/logs/get')
+            .get(this.userController.getAllLogs);
+        
+
+        //get  logs belonging to user
+        app.route('/api/logs/get/:userId')
+            .get(this.userController.getUserLogs);
+
 
     }
 }

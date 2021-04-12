@@ -3,8 +3,10 @@ import { Request, Response } from 'express';
 import { BlogSchema } from '../models/blogModel';
 import { Comment } from '../models/commentModel';
 import { UserSchema } from '../models/userModel';
+import { LogSchema } from '../models/logModel';
 import { UserI } from '../interfaces/user';
 import { BlogI } from '../interfaces/blog';
+import { LogI } from '../interfaces/log';
 
 const cloudinary = require('cloudinary').v2;
 import { Like } from '../models/likeModel';
@@ -17,12 +19,13 @@ dotenv.config();
 const Blog = mongoose.model<BlogI>('Blog', BlogSchema);
 //index blog documents to enable searching
 Blog.createIndexes()
-
-
 //Create an instance of  user model
 const User = mongoose.model<UserI>('User', UserSchema);
 //index user documents to enable searching
 User.createIndexes()
+
+//Create an instance of  log model
+const Log = mongoose.model<LogI>('Log', LogSchema);
 
 class BlogController {
 
@@ -80,7 +83,14 @@ class BlogController {
                                     return res.status(500).send({ status: "Server error", code: 500, message: err });
 
                                 }
-
+                                //add event to log
+                                Log.create({
+                                    name: 'BlogCreated',
+                                    user: user._id,
+                                    description: `successfully created blog ${blog.title}`,
+                                }, (err, log) => {
+                                    log.save();
+                                });
                                 return res.status(201).send({ blog: blog, status: "Success", code: 201, message: 'blog successfully published' });
 
                             });
@@ -283,6 +293,7 @@ class BlogController {
 
                         }
 
+//cloudinary configuration for image upload
 
                         cloudinary.config({
                             cloud_name: process.env.CLOUDINARY_NAME,
@@ -309,6 +320,14 @@ class BlogController {
                                     if (err) {
                                         return res.status(500).send({ status: "Server error", code: 500, message: err });
                                     }
+                                    // add event to log
+                                      Log.create({
+                                    name: 'BlogUpdated',
+                                    user: user._id,
+                                    description: `successfully updated blog ${blog.title}`,
+                                }, (err, log) => {
+                                    log.save();
+                                });
                                     code = 200;
                                     status = "Success";
                                     message = "Blog updated successfully";
@@ -377,7 +396,14 @@ class BlogController {
                                                     return res.status(500).send({ status: "Server error", code: 500, message: err });
 
                                                 }
-
+                                           // add event to log
+                                      Log.create({
+                                    name: 'Commented',
+                                    user: user._id,
+                                    description: `commented on ${blog.title}`,
+                                }, (err, log) => {
+                                    log.save();
+                                });
                                                 Comment.find({ blog: req.params.id }, function (err, comments) {
                                                     return res.status(201).send({ comments: comments, status: "Success", code: 201, message: 'Successfully commented' });
                                                 }).populate('user');
@@ -459,6 +485,14 @@ class BlogController {
                                                                 return res.status(500).send({ status: "Server error", code: 500, message: err });
 
                                                             }
+                                                               // add event to log
+                                                         Log.create({
+                                                          name: 'LikeBlog',
+                                                            user: user._id,
+                                                               description: `Liked ${blog.title}`,
+                                                            }, (err, log) => {
+                                                              log.save();
+                                                                });
 
                                                             Like.find({ blog: req.params.id }, function (err, likes) {
                                                                 return res.status(200).send({ likes: likes, liked: true, status: "Success", code: 200, message: 'liked' });
@@ -507,7 +541,7 @@ class BlogController {
                         return res.status(500).send({ status: "Server error", code: 500, message: err });
 
                     }
-                    code = 200;
+              code = 200;
                     status = "Success";
                     message = "Successfully viewed."
                     return res.status(code).send({ status: status, code: code, message: message });
@@ -555,7 +589,6 @@ class BlogController {
                                 message = "There was a problem with the server.";
                                 return res.status(code).send({ status: status, code: code, message: message });
                             }
-
                             code = 200;
                             status = "Success";
                             message = "blog removed successfully”";

@@ -3,22 +3,24 @@ import { UserSchema } from '../models/userModel';
 import { TokenSchema } from '../models/tokenModel';
 import { RoleSchema } from '../models/roleModel';
 import { TrashSchema } from '../models/trashModel';
+import { LogSchema } from '../models/logModel';
 import { Request, Response } from 'express';
 import { UserI } from '../interfaces/user';
 import { TokenI } from '../interfaces/token';
 import { RoleI } from '../interfaces/role';
 import { TrashI } from '../interfaces/trash';
+import { LogI } from '../interfaces/log';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { NodeMailgun } from 'ts-mailgun';
 import * as dotenv from 'dotenv';
 // initialize configuration
-dotenv.config()
+dotenv.config();
 
 //Create an instance of  user model
 const User = mongoose.model<UserI>('User', UserSchema);
 //index user documents to enable searching
-User.createIndexes()
+User.createIndexes();
 
 //Create an instance of role model
 const Role = mongoose.model<RoleI>('Role', RoleSchema);
@@ -27,6 +29,9 @@ const Role = mongoose.model<RoleI>('Role', RoleSchema);
 const Token = mongoose.model<TokenI>('Token', TokenSchema);
 //Create an instance of trash model
 const Trash = mongoose.model<TrashI>('Trash', TrashSchema);
+
+//Create an instance of log model
+const Log = mongoose.model<LogI>('Log', LogSchema);
 
 
 class UserController {
@@ -79,7 +84,7 @@ class UserController {
           } else {
             code = 200;
             status = "Success";
-            message = "Endpoint returned successfully”";
+            message = "Endpoint returned successfully";
             totalPages = Math.ceil(count / limit);
 
           }
@@ -132,6 +137,108 @@ class UserController {
     }
   }
 
+
+
+  public getAllLogs(req: Request, res: Response): void {
+
+    let status: string,
+      message: string,
+      code: number;
+
+    // get limit and page number from request
+    const currentPage: number = Number(req.query.page) || 1;
+    const limit: number = Number(req.query.limit) || 5;
+    const orderBy: number = Number(req.query.orderBy) || 1;
+    const sortBy: string = req.query.sortBy as string || 'name';
+    let hasNext: boolean,
+      hasPrev: boolean,
+      query: object;
+    if (req.query.search) {
+
+      const search = req.query.search;
+      //query to search for text
+      query = { $text: { $search: search } };
+    } else {
+      query = null
+    }
+
+    try {
+      //sort by firstname in ascending order
+      const sort = { [sortBy]: orderBy };
+
+     Log.find(query, async function (err: any, logs: any) {
+        // get total documents in the User collection 
+        const count: number = await Log.countDocuments();
+        let totalPages: number;
+        if (err) {
+          code = 500;
+          status = "Server error";
+          message = "There was a problem with the server.";
+          totalPages = 0;
+        } else {
+          if (logs.length == 0) {
+            code = 404;
+            status = "Not found";
+            message = "logs not found";
+            totalPages = 0;
+          } else {
+            code = 200;
+            status = "Success";
+            message = "Endpoint returned successfully";
+            totalPages = Math.ceil(count / limit);
+
+          }
+        }
+
+        if (currentPage > 1)
+          hasPrev = true;
+        else
+          hasPrev = false;
+
+        if (totalPages > currentPage)
+          hasNext = true;
+        else
+          hasNext = false;
+
+        //calculate values for previous and next page
+        const prevPage: number = Number(currentPage) - 1;
+        const nextPage: number = Number(currentPage) + 1;
+
+        //pagination object with all pagination values
+        const pagination: Record<string, unknown> = {
+          'totalPages': totalPages,
+          'currentPage': currentPage,
+          'logs': count,
+          'hasNext': hasNext,
+          'hasPrev': hasPrev,
+          'perPage': limit,
+          'prevPage': prevPage,
+          'nextPage': nextPage
+        }
+        //get current and next url
+        const links: Record<string, unknown> = {
+          'nextLink': `${req.protocol}://${req.get('host')}/api/logs/get?page=${nextPage}&limit=${limit}`,
+          'prevLink': `${req.protocol}://${req.get('host')}/api/logs/get?page=${prevPage}&limit=${limit}`
+        };
+        // return response with posts, calculated total pages, and current page
+        return res.status(code).send({ logs, pagination: pagination, status: status, code: code, message: message, links: links });
+
+
+
+      }).populate("user", "-__v")
+        .limit(limit * 1)//prevPage = (currentPage - 1) * limit
+        .skip((currentPage - 1) * limit)
+        .sort(sort) //sort by firstname
+        .select('-password') //do not select password
+        .exec();
+
+    } catch (err) {
+      console.error(err.message);
+    }
+  }
+
+
+
   public getAllRoles(req: Request, res: Response): void {
 
     let status: string,
@@ -141,7 +248,7 @@ class UserController {
     try {
   
       Role.find({}, async function (err: any, roles: any) {
-        // get total documents in the User collection 
+        // get total documents in the Logs collection 
   
         if (err) {
           code = 500;
@@ -157,11 +264,11 @@ class UserController {
           } else {
             code = 200;
             status = "Success";
-            message = "Endpoint returned successfully”";
+            message = "Endpoint returned successfully";
           }
         }
 
-        // return response with posts, calculated total pages, and current page
+        // return response with logs, calculated total pages, and current page
         return res.status(code).send({ roles:roles, status: status, code: code, message: message });
       }).populate("permissions", "-__v")
         .exec();
@@ -171,7 +278,27 @@ class UserController {
     }
   }
 
+  public getUserLogs(req: Request, res: Response): void{
+    let status: string,
+      message: any,
+      code: number;
+    Log.findById({user:req.params.userId },
+      (err: any, logs: Record<string, unknown>) => {
+        if (err) {
+          return res.status(500).send({ status: "Server error", code: 500, message: err });
+        }
+        if (logs == null) {
+          return res.status(404).send({ status: "Not found", code: 404, message: "Logs not available" });
+        }
+        status = 'success';
+        message = "Endpoint returned successfully";
+        code = 200;
+        return res.status(code).send({ logs:logs, status: status, code: code, message: message });
 
+      })
+    
+    
+}
 
   public assignRole(req: Request, res: Response): void {
 
@@ -224,7 +351,7 @@ class UserController {
 
                 const assignableRoles: string[] = [];
                 Object.keys(roles).forEach((key: string) => {
-                  assignableRoles.push(roles[key]['_id'])
+                  assignableRoles.push(roles[key]['_id']);
                 });
 
                 //find roles not yet assigned to user
@@ -236,6 +363,13 @@ class UserController {
                 if (notAssigned.length > 0) {
                   notAssigned.forEach((role: string) => {
                     user.roles.push(role);
+                    Log.create({
+                      name: 'AssignRole',
+                      user: user._id,
+                      description: `successfully assigned ${role} to ${user.firstName} ${user.lastName}`,
+                    }, (err, log) => {
+                      log.save();
+                    });
                   })
                 } else {
                   return res.status(400).send({ status: "bad request", code: 400, message: "Role already assigned to user" });
@@ -248,7 +382,7 @@ class UserController {
                     return res.status(500).send({ status: "Server error", code: 500, message: err });
 
                   }
-
+                 
                   code = 200;
                   status = "Success";
                   message = "Successfully assigned roles to user";
@@ -337,6 +471,13 @@ class UserController {
                     if (err) {
                       return res.status(500).send({ status: "Server error", code: 500, message: err });
                     }
+                    Log.create({
+                      name: 'UnAssignRoles',
+                      user: user._id,
+                      description: `successfully unassigned ${[roles]} to ${user.firstName} ${user.lastName}`,
+                    }, (err, log) => {
+                      log.save();
+                    });
                     code = 200;
                     status = "Success";
                     message = "User roles successfully removed";
@@ -381,7 +522,7 @@ class UserController {
         } else {
           code = 200;
           status = "Success";
-          message = "Endpoint returned successfully”";
+          message = "Endpoint returned successfully";
         }
       }
       return res.status(code).send({ user: user, status: status, code: code, message: message });
@@ -407,9 +548,18 @@ class UserController {
         status = "Not found";
         message = "User not found";
       } else {
+
+        //create log of event
+        Log.create({
+          name: 'Update',
+          user: user._id,
+          description: 'successfully updated details',
+        }, (err, log) => {
+          log.save();
+        });
         code = 200;
         status = "Success";
-        message = "User updated successfully”";
+        message = "User updated successfully";
       }
       return res.status(code).send({ user: user, status: status, code: code, message: message });
 
@@ -436,14 +586,25 @@ class UserController {
           status = "Not found";
           message = "User not found";
         } else {
-          let collectionName: string = 'userCollection';
+
+          //save to trash
+          let collectionName: string = "User";
           let collectionObject: object = user;
           let softDelete = new Trash({ collectionName, collectionObject });
           await softDelete.save();
           await User.deleteOne(user);
+
+          //add event to log
+          Log.create({
+            name: 'TrashUser',
+            user: user._id,
+            description: `successfully moved to trash`,
+          }, (err, log) => {
+            log.save();
+          });
           code = 200;
           status = "Success";
-          message = "User removed successfully”";
+          message = "User removed successfully";
 
         }
       }
@@ -471,10 +632,17 @@ class UserController {
         status = "Not found";
         message = "User not found";
       } else {
-
+        //add event to log
+        Log.create({
+          name: 'DeleteUser',
+          user: user._id,
+          description: `successfully removed`,
+        }, (err, log) => {
+          log.save();
+        });
         code = 200;
         status = "Success";
-        message = "User removed successfully”";
+        message = "User removed successfully";
       }
 
 
@@ -508,10 +676,29 @@ class UserController {
 
           code = 200;
           status = "Success";
-          if (user.active == true)
+          if (user.active == true) {
+            
+            //add event to log
+            Log.create({
+              name: 'Activate',
+              user: user._id,
+              description: `successfully activated`,
+            }, (err, log) => {
+              log.save();
+            });
             message = "User activated successfully";
-          else
+          }
+          else {
+            //add event to log
+            Log.create({
+              name: 'DeActivate',
+              user: user._id,
+              description: `successfully deactivated`,
+            }, (err, log) => {
+              log.save();
+            });
             message = "User deactivated successfully";
+          }
         }
 
 
@@ -540,7 +727,7 @@ class UserController {
 
     } else {
       //check if previous token generated for user exists
-      const token: TokenI = await Token.findOne({ userId: user._id });
+      const token: TokenI = await Token.findOne({ user: user._id });
       //if previous token exists then delete it first
       if (token) await token.deleteOne();
       //generate and hash a new password reset token
@@ -548,7 +735,7 @@ class UserController {
       const hashedToken: string = await bcrypt.hash(resetToken, Number(process.env.BCRYPT_SALT));
       //save the generated token
       await new Token({
-        userId: user._id,
+        user: user._id,
         token: hashedToken,
         createdAt: Date.now(),
       }).save();
@@ -578,6 +765,14 @@ class UserController {
         await mailer
           .send(userEmail, 'password reset request', body)
           .then((result) => {
+            //add event to log
+            Log.create({
+              name: 'RequestPasswordReseset',
+              user: user._id,
+              description: `requested for password reset`,
+            }, (err, log) => {
+              log.save();
+            });
             code = 200;
             status = "Success";
             message = `email with instructions on how to reset your password successfully sent to ${userEmail}`;
@@ -608,7 +803,7 @@ class UserController {
     const token: string = req.body.token;
     const password: string = req.body.password;
     //get user's password reset token 
-    const passwordResetToken: TokenI = await Token.findOne({ userId: userId });
+    const passwordResetToken: TokenI = await Token.findOne({ user: userId });
 
     console.log("token", passwordResetToken);
     if (!passwordResetToken) {
@@ -665,7 +860,14 @@ class UserController {
 
         //when done delete user's password reset token fron db
         await passwordResetToken.deleteOne();
-
+        //add event to log
+        Log.create({
+          name: 'PasswordReseset',
+          user: user._id,
+          description: `successfully reset password`,
+        }, (err, log) => {
+          log.save();
+        });
         code = 200;
         status = "Success";
         message = 'password reset successful';
