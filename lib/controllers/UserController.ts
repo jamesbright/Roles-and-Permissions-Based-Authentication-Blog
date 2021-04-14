@@ -225,7 +225,7 @@ class UserController {
 
 
 
-      }).populate("user", "-__v")
+      })
         .limit(limit * 1)//prevPage = (currentPage - 1) * limit
         .skip((currentPage - 1) * limit)
         .sort(sort) //sort by firstname
@@ -282,7 +282,7 @@ class UserController {
     let status: string,
       message: any,
       code: number;
-    Log.findById({user:req.params.userId },
+    Log.find({user:req.params.userId },
       (err: any, logs: Record<string, unknown>) => {
         if (err) {
           return res.status(500).send({ status: "Server error", code: 500, message: err });
