@@ -1,5 +1,11 @@
-# role-based-nodejs-jwt-auth-api
-role and permissions based nodejs-typescript authentication API
+# role-based-nodejs-blogging-jwt-auth-api
+role and permissions based nodejs-typescript API
+# features
+### assign and manage user and roles
+### user authentication with jwt
+### password reset via email
+### blogging system with likes, comments
+### .. other additions
 
 [Hosted app](https://auth-api764.herokuapp.com/)
 
