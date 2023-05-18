@@ -1,4 +1,5 @@
-# role-based-nodejs-blogging-jwt-auth-api
+# Nodejs, Typescript and Vuejs blog with administration 
+
 role and permissions based nodejs-typescript API
 # features
 ### assign and manage user and roles
